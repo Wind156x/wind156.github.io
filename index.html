@@ -1,0 +1,1186 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบทะเบียนงานธุรการ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Sarabun', sans-serif;
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .tab-active {
+            border-bottom: 2px solid #2563eb;
+            color: #2563eb;
+        }
+        .tab-inactive {
+            border-bottom: 2px solid transparent;
+            color: #6b7280;
+        }
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-lg shadow-lg p-3 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-bold text-white text-center mx-auto">ระบบทะเบียนงานธุรการ</h1>
+                    <p class="text-blue-100  text-center mx-auto">โรงเรียนบ้านละหอกตะแบง</p>
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <button id="addDocumentBtn" class="bg-white text-blue-700 hover:bg-blue-50 font-medium py-2 px-4 rounded-lg shadow transition duration-300 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        เพิ่มรายการใหม่
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-1 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-2 border-l-4 border-blue-500">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">รายการทั้งหมด</p>
+                        <p class="text-2xl font-bold text-gray-800 " id="totalDocs">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-2 border-l-4 border-green-500">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">เลขที่รับ</p>
+                        <p class="text-2xl font-bold text-gray-800" id="incomingDocs">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-2 border-l-4 border-yellow-500">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">เลขที่นำส่ง</p>
+                        <p class="text-2xl font-bold text-gray-800" id="outgoingDocs">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md p-2 border-l-4 border-purple-500">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-gray-500 text-sm">เลขที่คำสั่ง</p>
+                        <p class="text-2xl font-bold text-gray-800" id="orderDocs">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-md mb-8">
+            <div class="flex overflow-x-auto">
+                <button id="tab-all" class=" hidden tab-inactive flex-1 py-4 px-6 text-center font-medium focus:outline-none">
+                    ทั้งหมด
+                </button>
+                <button id="tab-incoming" class="tab-active flex-1 py-4 px-6 text-center font-medium focus:outline-none">
+                    เลขที่รับ
+                </button>
+                <button id="tab-outgoing" class="tab-inactive flex-1 py-4 px-6 text-center font-medium focus:outline-none">
+                    เลขที่นำส่ง
+                </button>
+                <button id="tab-order" class="tab-inactive flex-1 py-4 px-6 text-center font-medium focus:outline-none">
+                    เลขที่คำสั่ง
+                </button>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="flex-1">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="ค้นหาเอกสาร..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="absolute left-3 top-2.5 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <select id="yearFilter" class=" hidden border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">ทุกปี</option> 
+                    </select>
+                    <select id="sortBy" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="newest">ล่าสุด</option>
+                        <option value="oldest">เก่าสุด</option>
+                        <option value="docNumber">เลขที่เอกสาร</option>
+                    </select>
+                    <div class="flex space-x-2">
+                        <button id="exportPdfBtn" class="hidden bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-300 flex items-center">
+                            <div id="pdfSpinner" class="spinner mr-2 hidden"></div>
+                            <svg id="pdfIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd" />
+                            </svg>
+                            PDF
+                        </button>
+                        <button id="exportExcelBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-300 flex items-center">
+                            <div id="excelSpinner" class="spinner mr-2 hidden"></div>
+                            <svg id="excelIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd" />
+                            </svg>
+                            Excel
+                        </button>
+
+                        
+                    </div>                
+                </div>
+            </div>
+        </div>
+        <!-- Documents Table -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min</svg>-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เลขที่</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เรื่อง</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จาก/ถึง</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="documentTableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Documents will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptyState" class="py-8 text-center hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">ไม่พบข้อมูล</h3>
+                <p class="mt-1 text-sm text-gray-500">เริ่มต้นด้วยการเพิ่มรายการใหม่</p>
+            </div>
+        </div>
+    <!-- Add/Edit Document Modal -->
+    <div id="documentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 fade-in">
+            <div class="border-b px-6 py-4 flex justify-between items-center">
+                <h3 id="modalTitle" class="text-xl font-medium text-gray-900">เพิ่มรายการใหม่</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-500">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="documentForm" class="px-6 py-4">
+                <input type="hidden" id="documentId">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="docType" class="block text-sm font-medium text-gray-700 mb-1">ประเภทเอกสาร</label>
+                        <select id="docType" name="docType" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">เลือกประเภท</option>
+                            <option value="incoming">เลขที่รับ</option>
+                            <option value="outgoing">เลขที่นำส่ง</option>
+                            <option value="order">เลขที่คำสั่ง</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="docNumber" class="block text-sm font-medium text-gray-700 mb-1">เลขที่</label>
+                        <input type="text" id="docNumber" name="docNumber" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <script>
+                        document.getElementById('docType').addEventListener('change', function () {
+                            const docType = this.value;
+                            const docNumberInput = document.getElementById('docNumber');
+                            const fromToLabel = document.getElementById('fromToLabel');
+                            const fromToInput = document.getElementById('fromTo');
+                            const documents = JSON.parse(localStorage.getItem('adminDocuments')) || [];
+                            
+                            if (docType) {
+                                const filteredDocs = documents.filter(doc => doc.docType === docType);
+                                const nextNumber = filteredDocs.length > 0 
+                                    ? Math.max(...filteredDocs.map(doc => parseInt(doc.docNumber.match(/\d+/)[0]))) + 1 
+                                    : 1;
+                                let prefix = '';
+                                if (docType === 'incoming') {
+                                    prefix = 'ศธ 04083/';
+                                    fromToLabel.textContent = 'จาก';
+                                    fromToInput.placeholder = 'กรอกชื่อผู้ส่ง';
+                                } else if (docType === 'outgoing') {
+                                    prefix = 'ศธ 04083.3163/';
+                                    fromToLabel.textContent = 'ถึง';
+                                    fromToInput.placeholder = 'กรอกชื่อผู้รับ';
+                                    fromToInput.value = 'สพป.บุรีรัมย์ เขต 2';
+                                } else if (docType === 'order') {
+                                    prefix = ''; // Updated prefix for "เลขที่คำสั่ง"
+                                    fromToLabel.textContent = 'ผู้ลงนาม';
+                                    fromToInput.placeholder = 'กรอกชื่อผู้ลงนาม';
+                                    docNumberInput.value = `${prefix}${nextNumber}/2568`; // Auto-numbering for "เลขที่คำสั่ง"
+                                    return;
+                                }
+                                docNumberInput.value = `${prefix}${nextNumber}`;
+                            } else {
+                                docNumberInput.value = '';
+                                fromToLabel.textContent = 'จาก/ถึง';
+                                fromToInput.placeholder = '';
+                            }
+                        });
+                    </script>
+                    <div class="col-span-2">
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">เรื่อง</label>
+                        <input type="text" id="title" name="title" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
+                        <input type="date" id="date" name="date" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label id="fromToLabel" for="fromTo" class="block text-sm font-medium text-gray-700 mb-1">จาก/ถึง</label>
+                        <input type="text" id="fromTo" name="fromTo" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
+                        <textarea id="description" name="description" rows="4" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>        
+                    <div>
+                        <label for="fiscalYear" class="hidden block text-sm font-medium text-gray-700 mb-1">ปีงบประมาณ</label>
+                        <input id="fiscalYear" name="fiscalYear" type="text" required 
+                        placeholder="กรอกปีงบประมาณ (เช่น 2566 หรือ 2023)" 
+                        class="hidden w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+              </div>      <button type="button" id="cancelBtn" class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium py-2 px-4 rounded-lg mr-2">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" id="saveDocumentBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg" onclick="saveDocument(event)">
+                        บันทึก
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Document Modal -->
+    <div id="viewDocumentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 fade-in">
+            <div class="border-b px-6 py-4 flex justify-between items-center bg-blue-50">
+                <h3 id="viewModalTitle" class="text-xl font-medium text-gray-900">รายละเอียดเอกสาร</h3>
+                <button id="closeViewModal" class="text-gray-400 hover:text-gray-500">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="px-6 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-sm text-gray-500">ประเภทเอกสาร</p>
+                        <p id="viewDocType" class="font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">เลขที่</p>
+                        <p id="viewDocNumber" class="font-medium"></p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-sm text-gray-500">เรื่อง</p>
+                        <p id="viewTitle" class="font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">วันที่</p>
+                        <p id="viewDate" class="font-medium"></p>
+                    </div>
+                    <div>
+                        <p id="viewFromToLabel" class="text-sm text-gray-500">จาก/ถึง</p>
+                        <p id="viewFromTo" class="font-medium"></p>
+                    </div>
+                    <div class="col-span-2">
+                        <p class="text-sm text-gray-500">รายละเอียด</p>
+                        <p id="viewDescription" class="mt-1 whitespace-pre-line"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">แผนก/ฝ่าย</p>
+                        <p id="viewDepartment" class="font-medium"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">ปีงบประมาณ</p>
+                        <p id="viewFiscalYear" class="font-medium"></p>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button id="editFromViewBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg mr-2">
+                        แก้ไข
+                    </button>
+                    <button id="closeViewBtn" class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium py-2 px-4 rounded-lg">
+                        ปิด
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 fade-in">
+            <div class="px-6 py-4">
+                <div class="flex items-center justify-center mb-4">
+                    <div class="bg-red-100 rounded-full p-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                </div>
+                <h3 class="text-lg font-medium text-center text-gray-900 mb-2">ยืนยันการลบ</h3>
+                <p class="text-center text-gray-500">คุณต้องการลบรายการนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex justify-center gap-4">
+                <button id="cancelDeleteBtn" class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium py-2 px-4 rounded-lg">
+                    ยกเลิก
+                </button>
+                <button id="confirmDeleteBtn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">
+                    ลบรายการ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-20 opacity-0 flex items-center">
+        <span id="toastIcon" class="mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+            </svg>
+        </span>
+        <span id="toastMessage">บันทึกข้อมูลสำเร็จ</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize documents from localStorage or use sample data
+            let documents = JSON.parse(localStorage.getItem('adminDocuments')) || [
+                {
+                    id: 1,
+                    docType: 'incoming',
+                    docNumber: 'รับ 001/2566',
+                    title: 'หนังสือเชิญประชุมคณะกรรมการบริหาร',
+                    date: '2023-06-15',
+                    fromTo: 'สำนักงานปลัดกระทรวง',
+                    description: 'หนังสือเชิญประชุมคณะกรรมการบริหารประจำเดือนมิถุนายน 2566',
+                    department: 'ฝ่ายบริหาร',
+                    fiscalYear: '2023'
+                },
+                {
+                    id: 2,
+                    docType: 'outgoing',
+                    docNumber: 'นส 002/2566',
+                    title: 'หนังสือขอความอนุเคราะห์ใช้สถานที่',
+                    date: '2023-06-20',
+                    fromTo: 'โรงเรียนมัธยมศึกษา',
+                    description: 'หนังสือขอความอนุเคราะห์ใช้สถานที่จัดกิจกรรมวันเด็กแห่งชาติ',
+                    department: 'ฝ่ายกิจการนักเรียน',
+                    fiscalYear: '2023'
+                },
+                {
+                    id: 3,
+                    docType: 'order',
+                    docNumber: 'คส 003/2566',
+                    title: 'คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ',
+                    date: '2023-06-25',
+                    fromTo: 'ผู้อำนวยการโรงเรียน',
+                    description: 'คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุโครงการปรับปรุงห้องประชุม',
+                    department: 'ฝ่ายพัสดุ',
+                    fiscalYear: '2023'
+                },
+                {
+                    id: 4,
+                    docType: 'incoming',
+                    docNumber: 'รับ 004/2566',
+                    title: 'หนังสือแจ้งกำหนดการอบรมครู',
+                    date: '2023-07-05',
+                    fromTo: 'สำนักงานเขตพื้นที่การศึกษา',
+                    description: 'หนังสือแจ้งกำหนดการอบรมครูเรื่องการจัดการเรียนการสอนออนไลน์',
+                    department: 'ฝ่ายบุคลากร',
+                    fiscalYear: '2023'
+                },
+                {
+                    id: 5,
+                    docType: 'order',
+                    docNumber: 'คส ',
+                    title: 'คำสั่งแต่งตั้งคณะกรรมการดำเนินงานวันไหว้ครู',
+                    date: '2023-07-10',
+                    fromTo: 'ผู้อำนวยการโรงเรียน',
+                    description: 'คำสั่งแต่งตั้งคณะกรรมการดำเนินงานวันไหว้ครูประจำปีการศึกษา 2566',
+                    department: 'ฝ่ายกิจการนักเรียน',
+                    fiscalYear: '2023'
+                }
+            ];
+
+            // DOM Elements
+            const documentTableBody = document.getElementById('documentTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const documentModal = document.getElementById('documentModal');
+            const viewDocumentModal = document.getElementById('viewDocumentModal');
+            const deleteModal = document.getElementById('deleteModal');
+            const documentForm = document.getElementById('documentForm');
+            const modalTitle = document.getElementById('modalTitle');
+            const addDocumentBtn = document.getElementById('addDocumentBtn');
+            const closeModal = document.getElementById('closeModal');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const closeViewModal = document.getElementById('closeViewModal');
+            const closeViewBtn = document.getElementById('closeViewBtn');
+            const editFromViewBtn = document.getElementById('editFromViewBtn');
+            const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            const searchInput = document.getElementById('searchInput');
+            const yearFilter = document.getElementById('yearFilter');
+            const sortBy = document.getElementById('sortBy');
+            const exportPdfBtn = document.getElementById('exportPdfBtn');
+            const exportExcelBtn = document.getElementById('exportExcelBtn');
+            const toast = document.getElementById('toast');
+            const docTypeSelect = document.getElementById('docType');
+            
+            // Export button elements
+            const pdfSpinner = document.getElementById('pdfSpinner');
+            const pdfIcon = document.getElementById('pdfIcon');
+            const excelSpinner = document.getElementById('excelSpinner');
+            const excelIcon = document.getElementById('excelIcon');
+            
+            // Tab elements
+            const tabAll = document.getElementById('tab-all');
+            const tabIncoming = document.getElementById('tab-incoming');
+            const tabOutgoing = document.getElementById('tab-outgoing');
+            const tabOrder = document.getElementById('tab-order');
+            
+            // Stats elements
+            const totalDocsEl = document.getElementById('totalDocs');
+            const incomingDocsEl = document.getElementById('incomingDocs');
+            const outgoingDocsEl = document.getElementById('outgoingDocs');
+            const orderDocsEl = document.getElementById('orderDocs');
+
+            let currentDocumentId = null;
+            let currentTab = 'all';
+
+            // Initialize the table
+            renderDocuments();
+            updateStats();
+
+            // Event Listeners
+            addDocumentBtn.addEventListener('click', openAddDocumentModal);
+            closeModal.addEventListener('click', closeDocumentModal);
+            cancelBtn.addEventListener('click', closeDocumentModal);
+            documentForm.addEventListener('submit', saveDocument);
+            closeViewModal.addEventListener('click', closeViewDocumentModal);
+            closeViewBtn.addEventListener('click', closeViewDocumentModal);
+            editFromViewBtn.addEventListener('click', editFromView);
+            cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+            confirmDeleteBtn.addEventListener('click', confirmDelete);
+            searchInput.addEventListener('input', filterDocuments);
+            yearFilter.addEventListener('change', filterDocuments);
+            sortBy.addEventListener('change', filterDocuments);
+            exportPdfBtn.addEventListener('click', exportToPdf);
+            exportExcelBtn.addEventListener('click', exportToExcel);
+            
+            // Tab event listeners
+            tabAll.addEventListener('click', () => switchTab('all'));
+            tabIncoming.addEventListener('click', () => switchTab('incoming'));
+            tabOutgoing.addEventListener('click', () => switchTab('outgoing'));
+            tabOrder.addEventListener('click', () => switchTab('order'));
+            
+            // Document type change event
+            docTypeSelect.addEventListener('change', updateFromToLabel);
+
+            // Functions
+            function renderDocuments() {
+                const filteredDocuments = getFilteredDocuments();
+                
+                documentTableBody.innerHTML = '';
+                
+                if (filteredDocuments.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+                
+                emptyState.classList.add('hidden');
+                
+                filteredDocuments.forEach((doc, index) => {
+                    const row = document.createElement('tr');
+                    
+                    // Document type class and text
+                    let typeClass = '';
+                    let typeText = '';
+                    switch(doc.docType) {
+                        case 'incoming':
+                            typeClass = 'bg-green-100 text-green-800';
+                            typeText = 'เลขที่รับ';
+                            break;
+                        case 'outgoing':
+                            typeClass = 'bg-yellow-100 text-yellow-800';
+                            typeText = 'เลขที่นำส่ง';
+                            break;
+                        case 'order':
+                            typeClass = 'bg-purple-100 text-purple-800';
+                            typeText = 'เลขที่คำสั่ง';
+                            break;
+                    }
+                    
+                    // Format date
+                    const dateObj = new Date(doc.date);
+                    const formattedDate = dateObj.toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${typeClass}">
+                                ${typeText}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${doc.docNumber}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">${doc.title}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formattedDate}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${doc.fromTo || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <button data-id="${doc.id}" class="view-btn text-blue-600 hover:text-blue-900">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                                <button data-id="${doc.id}" class="edit-btn text-indigo-600 hover:text-indigo-900">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+                                <button data-id="${doc.id}" class="delete-btn text-red-600 hover:text-red-900">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    
+                    documentTableBody.appendChild(row);
+                });
+                
+                // Add event listeners to buttons
+                document.querySelectorAll('.view-btn').forEach(btn => {
+                    btn.addEventListener('click', () => viewDocument(btn.dataset.id));
+                });
+                
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', () => editDocument(btn.dataset.id));
+                });
+                
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', () => openDeleteModal(btn.dataset.id));
+                });
+            }
+
+            function getFilteredDocuments() {
+                let filtered = [...documents];
+                const searchTerm = searchInput.value.toLowerCase();
+                const yearValue = yearFilter.value;
+                const sortValue = sortBy.value;
+                
+                // Apply tab filter
+                if (currentTab !== 'all') {
+                    filtered = filtered.filter(doc => doc.docType === currentTab);
+                }
+                
+                // Apply search filter
+                if (searchTerm) {
+                    filtered = filtered.filter(doc => 
+                        doc.title.toLowerCase().includes(searchTerm) || 
+                        doc.docNumber.toLowerCase().includes(searchTerm) ||
+                        (doc.description && doc.description.toLowerCase().includes(searchTerm)) ||
+                        (doc.fromTo && doc.fromTo.toLowerCase().includes(searchTerm))
+                    );
+                }
+                
+                // Apply year filter
+                if (yearValue !== 'all') {
+                    filtered = filtered.filter(doc => doc.fiscalYear === yearValue);
+                }
+                
+                // Apply sorting
+                switch(sortValue) {
+                    case 'newest':
+                        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        break;
+                    case 'oldest':
+                        filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+                        break;
+                    case 'docNumber':
+                        filtered.sort((a, b) => a.docNumber.localeCompare(b.docNumber));
+                        break;
+                }
+                
+                return filtered;
+            }
+
+            function updateStats() {
+                const total = documents.length;
+                const incoming = documents.filter(doc => doc.docType === 'incoming').length;
+                const outgoing = documents.filter(doc => doc.docType === 'outgoing').length;
+                const order = documents.filter(doc => doc.docType === 'order').length;
+                
+                totalDocsEl.textContent = total;
+                incomingDocsEl.textContent = incoming;
+                outgoingDocsEl.textContent = outgoing;
+                orderDocsEl.textContent = order;
+            }
+
+            function switchTab(tab) {
+                currentTab = tab;
+                
+                // Update tab styling
+                [tabAll, tabIncoming, tabOutgoing, tabOrder].forEach(tabEl => {
+                    tabEl.classList.remove('tab-active');
+                    tabEl.classList.add('tab-inactive');
+                });
+                
+                switch(tab) {
+                    case 'all':
+                        tabAll.classList.remove('tab-inactive');
+                        tabAll.classList.add('tab-active');
+                        break;
+                    case 'incoming':
+                        tabIncoming.classList.remove('tab-inactive');
+                        tabIncoming.classList.add('tab-active');
+                        break;
+                    case 'outgoing':
+                        tabOutgoing.classList.remove('tab-inactive');
+                        tabOutgoing.classList.add('tab-active');
+                        break;
+                    case 'order':
+                        tabOrder.classList.remove('tab-inactive');
+                        tabOrder.classList.add('tab-active');
+                        break;
+                }
+                
+                renderDocuments();
+            }
+
+            function updateFromToLabel() {
+                const docType = docTypeSelect.value;
+                const fromToLabel = document.getElementById('fromToLabel');
+                
+                switch(docType) {
+                    case 'incoming':
+                        fromToLabel.textContent = 'จาก';
+                        break;
+                    case 'outgoing':
+                        fromToLabel.textContent = 'ถึง';
+                        break;
+                    case 'order':
+                        fromToLabel.textContent = 'ผู้ลงนาม';
+                        break;
+                    default:
+                        fromToLabel.textContent = 'จาก/ถึง';
+                }
+            }
+
+            function openAddDocumentModal() {
+                modalTitle.textContent = 'เพิ่มรายการใหม่';
+                documentForm.reset();
+                document.getElementById('documentId').value = '';
+                document.getElementById('date').valueAsDate = new Date();
+                document.getElementById('fiscalYear').value = new Date().getFullYear().toString();
+                
+                // Set default document type based on current tab
+                if (currentTab !== 'all') {
+                    docTypeSelect.value = currentTab;
+                    updateFromToLabel();
+                }
+                
+                documentModal.classList.remove('hidden');
+            }
+
+            function closeDocumentModal() {
+                documentModal.classList.add('hidden');
+            }
+
+            function closeViewDocumentModal() {
+                viewDocumentModal.classList.add('hidden');
+            }
+
+            function editFromView() {
+                closeViewDocumentModal();
+                editDocument(currentDocumentId);
+            }
+
+            function saveDocument(e) {
+                e.preventDefault();
+
+                const documentId = document.getElementById('documentId').value;
+                const docType = document.getElementById('docType').value;
+                const docNumber = document.getElementById('docNumber').value;
+                const title = document.getElementById('title').value.trim();
+                const date = document.getElementById('date').value;
+                const fromTo = document.getElementById('fromTo').value.trim();
+                const description = document.getElementById('description').value.trim();
+                const department = document.getElementById('department')?.value.trim() || '';
+                const fiscalYear = document.getElementById('fiscalYear').value.trim();
+
+                if (!docType || !docNumber || !title || !date || !fiscalYear) {
+                    showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+                    return;
+                }
+
+                if (documentId) {
+                    // Edit existing document
+                    const index = documents.findIndex(doc => doc.id == documentId);
+                    if (index !== -1) {
+                        documents[index] = {
+                            ...documents[index],
+                            docType,
+                            docNumber,
+                            title,
+                            date,
+                            fromTo,
+                            description,
+                            department,
+                            fiscalYear
+                        };
+                        showToast('อัพเดทข้อมูลสำเร็จ');
+                    }
+                } else {
+                    // Add new document
+                    const newId = documents.length > 0 ? Math.max(...documents.map(doc => doc.id)) + 1 : 1;
+                    documents.push({
+                        id: newId,
+                        docType,
+                        docNumber,
+                        title,
+                        date,
+                        fromTo,
+                        description,
+                        department,
+                        fiscalYear
+                    });
+                    showToast('บันทึกข้อมูลสำเร็จ');
+                }
+
+                // Save to localStorage
+                localStorage.setItem('adminDocuments', JSON.stringify(documents));
+
+                // Update UI
+                renderDocuments();
+                updateStats();
+                closeDocumentModal();
+            }
+
+            function viewDocument(id) {
+                const doc = documents.find(doc => doc.id == id);
+                if (!doc) return;
+                
+                currentDocumentId = doc.id;
+                
+                // Set document type text
+                let docTypeText = '';
+                switch(doc.docType) {
+                    case 'incoming':
+                        docTypeText = 'เลขที่รับ';
+                        document.getElementById('viewFromToLabel').textContent = 'จาก';
+                        break;
+                    case 'outgoing':
+                        docTypeText = 'เลขที่นำส่ง';
+                        document.getElementById('viewFromToLabel').textContent = 'ถึง';
+                        break;
+                    case 'order':
+                        docTypeText = 'เลขที่คำสั่ง';
+                        document.getElementById('viewFromToLabel').textContent = 'ผู้ลงนาม';
+                        break;
+                }
+                
+                document.getElementById('viewDocType').textContent = docTypeText;
+                document.getElementById('viewDocNumber').textContent = doc.docNumber;
+                document.getElementById('viewTitle').textContent = doc.title;
+                
+                const dateObj = new Date(doc.date);
+                const formattedDate = dateObj.toLocaleDateString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                document.getElementById('viewDate').textContent = formattedDate;
+                
+                document.getElementById('viewFromTo').textContent = doc.fromTo || '-';
+                document.getElementById('viewDescription').textContent = doc.description || '-';
+                document.getElementById('viewDepartment').textContent = doc.department || '-';
+                
+                // Format fiscal year
+                const fiscalYearText = doc.fiscalYear === '2023' ? '2566 (2023)' : 
+                                      doc.fiscalYear === '2022' ? '2565 (2022)' : 
+                                      doc.fiscalYear === '2021' ? '2564 (2021)' : doc.fiscalYear;
+                document.getElementById('viewFiscalYear').textContent = fiscalYearText;
+                
+                viewDocumentModal.classList.remove('hidden');
+            }
+
+            function editDocument(id) {
+                const doc = documents.find(doc => doc.id == id);
+                if (!doc) return;
+                
+                modalTitle.textContent = 'แก้ไขรายการ';
+                
+                document.getElementById('documentId').value = doc.id;
+                document.getElementById('docType').value = doc.docType;
+                document.getElementById('docNumber').value = doc.docNumber;
+                document.getElementById('title').value = doc.title;
+                document.getElementById('date').value = doc.date;
+                document.getElementById('fromTo').value = doc.fromTo || '';
+                document.getElementById('description').value = doc.description || '';
+                document.getElementById('department').value = doc.department || '';
+                document.getElementById('fiscalYear').value = doc.fiscalYear;
+                
+                updateFromToLabel();
+                
+                documentModal.classList.remove('hidden');
+            }
+
+            function openDeleteModal(id) {
+                currentDocumentId = id;
+                deleteModal.classList.remove('hidden');
+            }
+
+            function closeDeleteModal() {
+                deleteModal.classList.add('hidden');
+            }
+
+            function confirmDelete() {
+                if (currentDocumentId) {
+                    documents = documents.filter(doc => doc.id != currentDocumentId);
+                    localStorage.setItem('adminDocuments', JSON.stringify(documents));
+                    renderDocuments();
+                    updateStats();
+                    showToast('ลบข้อมูลสำเร็จ', 'error');
+                }
+                closeDeleteModal();
+            }
+
+            function filterDocuments() {
+                renderDocuments();
+            }
+
+            function showToast(message, type = 'success') {
+                const toastMessage = document.getElementById('toastMessage');
+                const toastIcon = document.getElementById('toastIcon');
+                
+                toastMessage.textContent = message;
+                
+                if (type === 'success') {
+                    toastIcon.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                    `;
+                } else if (type === 'error') {
+                    toastIcon.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                        </svg>
+                    `;
+                }
+                
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+
+            // Export to PDF function with loading indicator
+            async function exportToPdf() {
+                try {
+                    // Show loading spinner
+                    pdfSpinner.classList.remove('hidden');
+                    pdfIcon.classList.add('hidden');
+                    exportPdfBtn.disabled = true;
+                    
+                    // Get filtered documents
+                    const filteredDocuments = getFilteredDocuments();
+                    
+                    // Create a new jsPDF instance
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF({
+                        orientation: 'landscape',
+                        unit: 'mm',
+                        format: 'a4'
+                    });
+                    
+                    // Add title
+                    doc.setFont('Sarabun-Bold', 'normal');
+                    doc.setFontSize(18);
+                    
+                    let reportTitle = 'รายงานทะเบียนงานธุรการ';
+                    switch(currentTab) {
+                        case 'incoming':
+                            reportTitle = 'รายงานทะเบียนเลขที่รับ';
+                            break;
+                        case 'outgoing':
+                            reportTitle = 'รายงานทะเบียนเลขที่นำส่ง';
+                            break;
+                        case 'order':
+                            reportTitle = 'รายงานทะเบียนเลขที่คำสั่ง';
+                            break;
+                    }
+                    
+                    doc.text(reportTitle, 150, 15, { align: 'center' });
+                    
+                    // Add date
+                    const today = new Date();
+                    const formattedDate = today.toLocaleDateString('th-TH', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    doc.setFontSize(12);
+                    doc.text(`วันที่พิมพ์: ${formattedDate}`, 270, 15, { align: 'right' });
+                    
+                    // Prepare table data
+                    const tableData = filteredDocuments.map((doc, index) => {
+                        const dateObj = new Date(doc.date);
+                        const formattedDate = dateObj.toLocaleDateString('th-TH', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        
+                        let docTypeText = '';
+                        switch(doc.docType) {
+                            case 'incoming':
+                                docTypeText = 'เลขที่รับ';
+                                break;
+                            case 'outgoing':
+                                docTypeText = 'เลขที่นำส่ง';
+                                break;
+                            case 'order':
+                                docTypeText = 'เลขที่คำสั่ง';
+                                break;
+                        }
+                        
+                        return [
+                            index + 1,
+                            docTypeText,
+                            doc.docNumber,
+                            doc.title,
+                            formattedDate,
+                            doc.fromTo || '-',
+                            doc.department || '-'
+                        ];
+                    });
+                    
+                    // Generate table
+                    doc.autoTable({
+                        head: [['ลำดับ', 'ประเภท', 'เลขที่', 'เรื่อง', 'วันที่', 'จาก/ถึง', 'แผนก/ฝ่าย']],
+                        body: tableData,
+                        startY: 25,
+                        headStyles: {
+                            fillColor: [41, 82, 163],
+                            textColor: [255, 255, 255],
+                            fontStyle: 'bold'
+                        },
+                        alternateRowStyles: {
+                            fillColor: [240, 245, 255]
+                        },
+                        styles: {
+                            font: 'Sarabun',
+                            fontSize: 10
+                        },
+                        columnStyles: {
+                            0: { cellWidth: 15 },
+                            1: { cellWidth: 25 },
+                            2: { cellWidth: 30 },
+                            3: { cellWidth: 80 },
+                            4: { cellWidth: 30 },
+                            5: { cellWidth: 40 },
+                            6: { cellWidth: 40 }
+                        }
+                    });
+                    
+                    // Add summary
+                    const finalY = doc.lastAutoTable.finalY + 10;
+                    doc.text(`จำนวนรายการทั้งหมด: ${filteredDocuments.length} รายการ`, 14, finalY);
+                    
+                    // Save PDF
+                    const fileName = currentTab === 'all' ? 'รายงานทะเบียนงานธุรการ.pdf' : 
+                                    currentTab === 'incoming' ? 'รายงานทะเบียนเลขที่รับ.pdf' :
+                                    currentTab === 'outgoing' ? 'รายงานทะเบียนเลขที่นำส่ง.pdf' :
+                                    'รายงานทะเบียนเลขที่คำสั่ง.pdf';
+                    
+                    // Simulate a small delay to show the loading spinner
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Save and download the PDF
+                    doc.save(fileName);
+                    
+                    showToast('ดาวน์โหลด PDF สำเร็จ');
+                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    showToast('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF', 'error');
+                } finally {
+                    // Hide loading spinner
+                    pdfSpinner.classList.add('hidden');
+                    pdfIcon.classList.remove('hidden');
+                    exportPdfBtn.disabled = false;
+                }
+            }
+
+            // Export to Excel function with loading indicator
+            async function exportToExcel() {
+                try {
+                    // Show loading spinner
+                    excelSpinner.classList.remove('hidden');
+                    excelIcon.classList.add('hidden');
+                    exportExcelBtn.disabled = true;
+                    
+                    // Get filtered documents
+                    const filteredDocuments = getFilteredDocuments();
+                    
+                    // Prepare Excel data
+                    const excelData = filteredDocuments.map(doc => {
+                        const dateObj = new Date(doc.date);
+                        const formattedDate = dateObj.toLocaleDateString('th-TH', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        });
+                        
+                        let docTypeText = '';
+                        switch(doc.docType) {
+                            case 'incoming':
+                                docTypeText = 'เลขที่รับ';
+                                break;
+                            case 'outgoing':
+                                docTypeText = 'เลขที่นำส่ง';
+                                break;
+                            case 'order':
+                                docTypeText = 'เลขที่คำสั่ง';
+                                break;
+                        }
+                        
+                        return {
+                            'ลำดับ': filteredDocuments.indexOf(doc) + 1,
+                            'ประเภท': docTypeText,
+                            'เลขที่': doc.docNumber,
+                            'เรื่อง': doc.title,
+                            'วันที่': formattedDate,
+                            'จาก/ถึง': doc.fromTo || '-',
+                            'รายละเอียด': doc.description || '-',
+                            'แผนก/ฝ่าย': doc.department || '-',
+                            'ปีงบประมาณ': doc.fiscalYear === '2023' ? '2566' : 
+                                        doc.fiscalYear === '2022' ? '2565' : 
+                                        doc.fiscalYear === '2021' ? '2564' : doc.fiscalYear
+                        };
+                    });
+                    
+                    // Create worksheet
+                    const ws = XLSX.utils.json_to_sheet(excelData);
+                    
+                    // Set column widths
+                    const wscols = [
+                        { wch: 8 },  // ลำดับ
+                        { wch: 15 }, // ประเภท
+                        { wch: 15 }, // เลขที่
+                        { wch: 40 }, // เรื่อง
+                        { wch: 20 }, // วันที่
+                        { wch: 25 }, // จาก/ถึง
+                        { wch: 50 }, // รายละเอียด
+                        { wch: 20 }, // แผนก/ฝ่าย
+                        { wch: 15 }  // ปีงบประมาณ
+                    ];
+                    ws['!cols'] = wscols;
+                    
+                    // Create workbook
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'ทะเบียนงานธุรการ');
+                    
+                    // Determine file name based on current tab
+                    const fileName = currentTab === 'all' ? 'รายงานทะเบียนงานธุรการ.xlsx' : 
+                                    currentTab === 'incoming' ? 'รายงานทะเบียนเลขที่รับ.xlsx' :
+                                    currentTab === 'outgoing' ? 'รายงานทะเบียนเลขที่นำส่ง.xlsx' :
+                                    'รายงานทะเบียนเลขที่คำสั่ง.xlsx';
+                    
+                    // Simulate a small delay to show the loading spinner
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Generate and download Excel file
+                    XLSX.writeFile(wb, fileName);
+                    
+                    showToast('ดาวน์โหลด Excel สำเร็จ');
+                } catch (error) {
+                    console.error('Error generating Excel:', error);
+                    showToast('เกิดข้อผิดพลาดในการสร้างไฟล์ Excel', 'error');
+                } finally {
+                    // Hide loading spinner
+                    excelSpinner.classList.add('hidden');
+                    excelIcon.classList.remove('hidden');
+                    exportExcelBtn.disabled = false;
+                }
+            }
+        });
+        
+        
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935af54bc2f47b40',t:'MTc0NTU1Mzg4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
