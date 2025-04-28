@@ -2,1185 +2,1910 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบทะเบียนงานธุรการ</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Sarabun', sans-serif;
-        }
-        .modal {
-            transition: opacity 0.3s ease;
-        }
-        .fade-in {
-            animation: fadeIn 0.3s;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .tab-active {
-            border-bottom: 2px solid #2563eb;
-            color: #2563eb;
-        }
-        .tab-inactive {
-            border-bottom: 2px solid transparent;
-            color: #6b7280;
-        }
-        /* Loading spinner */
-        .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 3px solid white;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบริหารงานเอกสาร</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #4895ef;
+      --secondary: #f72585;
+      --success: #4cc9f0;
+      --warning: #fca311;
+      --danger: #e63946;
+      --dark: #212529;
+      --light: #f8f9fa;
+      --gray: #adb5bd;
+      --white: #ffffff;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --radius: 12px;
+      --transition: all 0.3s ease;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+      color: var(--dark);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+    
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    
+    .glass {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: var(--shadow);
+    }
+    
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+      color: white;
+      border-radius: var(--radius);
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo {
+      background: rgba(255, 255, 255, 0.2);
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+    }
+    
+    .title h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .title p {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .notification-btn {
+      position: relative;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      color: white;
+    }
+    
+    .notification-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .notification-dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      background: var(--danger);
+      border-radius: 50%;
+    }
+    
+    /* Navigation */
+    .nav {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 8px;
+      margin-bottom: 16px;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      background: transparent;
+      font-family: 'Prompt', sans-serif;
+    }
+    
+    .nav-item:hover {
+      transform: translateY(-2px);
+    }
+    
+    .nav-item.active {
+      background: rgba(67, 97, 238, 0.1);
+      border-left: 3px solid var(--primary);
+    }
+    
+    .nav-icon {
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+    
+    .nav-text {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    /* Search */
+    .search {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      transition: var(--transition);
+    }
+    
+    .search.active {
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.3);
+    }
+    
+    .search-icon {
+      color: var(--gray);
+      margin-right: 8px;
+    }
+    
+    .search-input {
+      border: none;
+      background: transparent;
+      width: 100%;
+      outline: none;
+      font-family: 'Prompt', sans-serif;
+      font-size: 14px;
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+    
+    .tab {
+      padding: 8px;
+      text-align: center;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 14px;
+      border: none;
+      background: transparent;
+      font-family: 'Prompt', sans-serif;
+    }
+    
+    .tab.active {
+      background: var(--primary);
+      color: white;
+      font-weight: 500;
+    }
+    
+    /* Content */
+    .content {
+      padding: 16px;
+    }
+    
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .content-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .add-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: 'Prompt', sans-serif;
+      font-size: 13px;
+    }
+    
+    .add-btn:hover {
+      background: var(--primary-light);
+      transform: translateY(-2px);
+    }
+    
+    .add-icon {
+      margin-right: 4px;
+    }
+    
+    /* Table */
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .table th {
+      text-align: left;
+      padding: 8px 4px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gray);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .table td {
+      padding: 12px 4px;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .table tr {
+      transition: var(--transition);
+    }
+    
+    .table tr:hover {
+      background: rgba(0, 0, 0, 0.02);
+    }
+    
+    .view-all {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 16px;
+      color: var(--primary);
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: 'Prompt', sans-serif;
+    }
+    
+    .view-all:hover {
+      text-decoration: underline;
+    }
+    
+    .view-icon {
+      margin-left: 4px;
+    }
+    
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--secondary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(247, 37, 133, 0.4);
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+    }
+    
+    .fab:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 16px rgba(247, 37, 133, 0.5);
+    }
+    
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      width: 90%;
+      max-width: 400px;
+      padding: 20px;
+      border-radius: var(--radius);
+      background: white;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .close-btn {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--gray);
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: var(--radius);
+      font-family: 'Prompt', sans-serif;
+      font-size: 14px;
+    }
+    
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-family: 'Prompt', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+    }
+    
+    .btn-cancel {
+      background: var(--light);
+      color: var(--dark);
+    }
+    
+    .btn-submit {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-submit:hover {
+      background: var(--primary-light);
+    }
+    
+    /* Loading */
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      color: white;
+      font-size: 14px;
+      box-shadow: var(--shadow);
+      z-index: 1100;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s ease;
+    }
+    
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .toast-success {
+      background: #10b981;
+    }
+    
+    .toast-error {
+      background: #ef4444;
+    }
+    
+    /* Hidden */
+    .hidden {
+      display: none !important;
+    }
+    
+    /* Sections */
+    .section {
+      display: none;
+    }
+    
+    .section.active {
+      display: block;
+    }
+    
+    /* Tab Content */
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 24px 0;
+      color: var(--gray);
+    }
+    
+    .empty-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    
+    .empty-text {
+      font-size: 14px;
+    }
+
+    /* Card Style */
+    .data-card {
+      padding: 12px;
+      border-radius: var(--radius);
+      background: white;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: var(--transition);
+    }
+
+    .data-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .data-card-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+
+    .data-card-number {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .data-card-date {
+      font-size: 15px;;
+    }
+
+    .data-card-subject {
+      font-size: 14px;
+    }
+
+
+    /* Loading Skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 0.1ms infinite;
+      border-radius: 4px;
+
+    }
+
+    @keyframes loading {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .skeleton-card {
+      padding: 12px;
+      border-radius: var(--radius);
+      background: white;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .skeleton-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-number {
+      width: 100px;
+      height: 16px;
+    }
+
+    .skeleton-date {
+      width: 80px;
+      height: 16px;
+    }
+
+    .skeleton-subject {
+      height: 16px;
+    }
+    
+    /* View Record Modal */
+    .record-list {
+      max-height: 400vx;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      width: 100%;
+    }
+    
+    .record-item {
+      padding: 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .record-item:hover {
+      background: rgba(67, 97, 238, 0.05);
+    }
+    
+    .record-item-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    
+    .record-number {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    
+    .record-date {
+      font-size: 12px;
+      color: var(--gray);
+    }
+    
+    .record-subject {
+      font-size: 14px;
+    }
+    
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    
+    .page-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(0,0,0,0.1);
+      background: white;
+      cursor: pointer;
+      transition: var(--transition);
+      font-family: 'Prompt', sans-serif;
+    }
+    
+    .page-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    .page-btn:hover:not(.active) {
+      background: rgba(0,0,0,0.05);
+    }
+
+    * {
+    box-sizing: border-box;
+    }
+
+    .record-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        padding: 16px;
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    .skeleton-card {
+        background: #f0f0f0;
+        border-radius: 8px;
+        padding: 16px;
+    }
+
+    .skeleton-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+
+    .skeleton {
+        background: #e0e0e0;
+        border-radius: 4px;
+    }
+
+    .skeleton-number {
+        width: 50px;
+        height: 20px;
+    }
+
+    .skeleton-date {
+        width: 100px;
+        height: 20px;
+    }
+
+    .skeleton-subject {
+        width: 100%;
+        height: 30px;
+    }
+
+
+    
+
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-lg shadow-lg p-3 mb-8">
-            <div class="flex flex-col md:flex-row justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold text-white text-center mx-auto">ระบบทะเบียนงานธุรการ</h1>
-                    <p class="text-blue-100  text-center mx-auto">โรงเรียนบ้านละหอกตะแบง</p>
-                </div>
-                <div class="mt-4 md:mt-0">
-                    <button id="addDocumentBtn" class="bg-white text-blue-700 hover:bg-blue-50 font-medium py-2 px-4 rounded-lg shadow transition duration-300 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
-                        เพิ่มรายการใหม่
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Dashboard Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-1 mb-8">
-            <div class="bg-white rounded-lg shadow-md p-2 border-l-4 border-blue-500">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm">รายการทั้งหมด</p>
-                        <p class="text-2xl font-bold text-gray-800 " id="totalDocs">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow-md p-2 border-l-4 border-green-500">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414a1 1 0 01.707-.293H20" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm">เลขที่รับ</p>
-                        <p class="text-2xl font-bold text-gray-800" id="incomingDocs">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow-md p-2 border-l-4 border-yellow-500">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm">เลขที่นำส่ง</p>
-                        <p class="text-2xl font-bold text-gray-800" id="outgoingDocs">0</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow-md p-2 border-l-4 border-purple-500">
-                <div class="flex items-center">
-                    <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="text-gray-500 text-sm">เลขที่คำสั่ง</p>
-                        <p class="text-2xl font-bold text-gray-800" id="orderDocs">0</p>
-                    </div>
-                </div>
-            </div>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="logo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
+            <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
+          </svg>
         </div>
-
-        <!-- Tabs -->
-        <div class="bg-white rounded-lg shadow-md mb-8">
-            <div class="flex overflow-x-auto">
-                <button id="tab-all" class=" hidden tab-inactive flex-1 py-4 px-6 text-center font-medium focus:outline-none">
-                    ทั้งหมด
-                </button>
-                <button id="tab-incoming" class="tab-active flex-1 py-4 px-6 text-center font-medium focus:outline-none">
-                    เลขที่รับ
-                </button>
-                <button id="tab-outgoing" class="tab-inactive flex-1 py-4 px-6 text-center font-medium focus:outline-none">
-                    เลขที่นำส่ง
-                </button>
-                <button id="tab-order" class="tab-inactive flex-1 py-4 px-6 text-center font-medium focus:outline-none">
-                    เลขที่คำสั่ง
-                </button>
-            </div>
+        <div class="title">
+          <h1>ระบบบริหารงานเอกสาร</h1>
+          <p>ยินดีต้อนรับ, คุณผู้ใช้งาน</p>
         </div>
-
-        <!-- Search and Filter -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div class="flex-1">
-                    <div class="relative">
-                        <input type="text" id="searchInput" placeholder="ค้นหาเอกสาร..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <div class="absolute left-3 top-2.5 text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex flex-col md:flex-row gap-4">
-                    <select id="yearFilter" class=" hidden border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="all">ทุกปี</option> 
-                    </select>
-                    <select id="sortBy" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="newest">ล่าสุด</option>
-                        <option value="oldest">เก่าสุด</option>
-                        <option value="docNumber">เลขที่เอกสาร</option>
-                    </select>
-                    <div class="flex space-x-2">
-                        <button id="exportPdfBtn" class="hidden bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-300 flex items-center">
-                            <div id="pdfSpinner" class="spinner mr-2 hidden"></div>
-                            <svg id="pdfIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd" />
-                            </svg>
-                            PDF
-                        </button>
-                        <button id="exportExcelBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-300 flex items-center">
-                            <div id="excelSpinner" class="spinner mr-2 hidden"></div>
-                            <svg id="excelIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd" />
-                            </svg>
-                            Excel
-                        </button>
-
-                        
-                    </div>                
-                </div>
-            </div>
-        </div>
-        <!-- Documents Table -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min</svg>-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ลำดับ</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ประเภท</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เลขที่</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เรื่อง</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จาก/ถึง</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">การจัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="documentTableBody" class="bg-white divide-y divide-gray-200">
-                        <!-- Documents will be inserted here -->
-                    </tbody>
-                </table>
-            </div>
-            <div id="emptyState" class="py-8 text-center hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">ไม่พบข้อมูล</h3>
-                <p class="mt-1 text-sm text-gray-500">เริ่มต้นด้วยการเพิ่มรายการใหม่</p>
-            </div>
-        </div>
-    <!-- Add/Edit Document Modal -->
-    <div id="documentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 fade-in">
-            <div class="border-b px-6 py-4 flex justify-between items-center">
-                <h3 id="modalTitle" class="text-xl font-medium text-gray-900">เพิ่มรายการใหม่</h3>
-                <button id="closeModal" class="text-gray-400 hover:text-gray-500">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <form id="documentForm" class="px-6 py-4">
-                <input type="hidden" id="documentId">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="docType" class="block text-sm font-medium text-gray-700 mb-1">ประเภทเอกสาร</label>
-                        <select id="docType" name="docType" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="">เลือกประเภท</option>
-                            <option value="incoming">เลขที่รับ</option>
-                            <option value="outgoing">เลขที่นำส่ง</option>
-                            <option value="order">เลขที่คำสั่ง</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="docNumber" class="block text-sm font-medium text-gray-700 mb-1">เลขที่</label>
-                        <input type="text" id="docNumber" name="docNumber" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <script>
-                        document.getElementById('docType').addEventListener('change', function () {
-                            const docType = this.value;
-                            const docNumberInput = document.getElementById('docNumber');
-                            const fromToLabel = document.getElementById('fromToLabel');
-                            const fromToInput = document.getElementById('fromTo');
-                            const documents = JSON.parse(localStorage.getItem('adminDocuments')) || [];
-                            
-                            if (docType) {
-                                const filteredDocs = documents.filter(doc => doc.docType === docType);
-                                const nextNumber = filteredDocs.length > 0 
-                                    ? Math.max(...filteredDocs.map(doc => parseInt(doc.docNumber.match(/\d+/)[0]))) + 1 
-                                    : 1;
-                                let prefix = '';
-                                if (docType === 'incoming') {
-                                    prefix = 'ศธ 04083/';
-                                    fromToLabel.textContent = 'จาก';
-                                    fromToInput.placeholder = 'กรอกชื่อผู้ส่ง';
-                                } else if (docType === 'outgoing') {
-                                    prefix = 'ศธ 04083.3163/';
-                                    fromToLabel.textContent = 'ถึง';
-                                    fromToInput.placeholder = 'กรอกชื่อผู้รับ';
-                                    fromToInput.value = 'สพป.บุรีรัมย์ เขต 2';
-                                } else if (docType === 'order') {
-                                    prefix = ''; // Updated prefix for "เลขที่คำสั่ง"
-                                    fromToLabel.textContent = 'ผู้ลงนาม';
-                                    fromToInput.placeholder = 'กรอกชื่อผู้ลงนาม';
-                                    docNumberInput.value = `${prefix}${nextNumber}/2568`; // Auto-numbering for "เลขที่คำสั่ง"
-                                    return;
-                                }
-                                docNumberInput.value = `${prefix}${nextNumber}`;
-                            } else {
-                                docNumberInput.value = '';
-                                fromToLabel.textContent = 'จาก/ถึง';
-                                fromToInput.placeholder = '';
-                            }
-                        });
-                    </script>
-                    <div class="col-span-2">
-                        <label for="title" class="block text-sm font-medium text-gray-700 mb-1">เรื่อง</label>
-                        <input type="text" id="title" name="title" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="date" class="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
-                        <input type="date" id="date" name="date" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label id="fromToLabel" for="fromTo" class="block text-sm font-medium text-gray-700 mb-1">จาก/ถึง</label>
-                        <input type="text" id="fromTo" name="fromTo" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="col-span-2">
-                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
-                        <textarea id="description" name="description" rows="4" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                    </div>        
-                    <div>
-                        <label for="fiscalYear" class="hidden block text-sm font-medium text-gray-700 mb-1">ปีงบประมาณ</label>
-                        <input id="fiscalYear" name="fiscalYear" type="text" required 
-                        placeholder="กรอกปีงบประมาณ (เช่น 2566 หรือ 2023)" 
-                        class="hidden w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-end">
-              </div>      <button type="button" id="cancelBtn" class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium py-2 px-4 rounded-lg mr-2">
-                        ยกเลิก
-                    </button>
-                    <button type="submit" id="saveDocumentBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg" onclick="saveDocument(event)">
-                        บันทึก
-                    </button>
-                </div>
-            </form>
-        </div>
+      </div>
+      <button class="notification-btn" id="notificationBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zm.995-14.901a1 1 0 1 0-1.99 0A5.002 5.002 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901z"/>
+        </svg>
+        <span class="notification-dot"></span>
+      </button>
     </div>
 
-    <!-- View Document Modal -->
-    <div id="viewDocumentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 fade-in">
-            <div class="border-b px-6 py-4 flex justify-between items-center bg-blue-50">
-                <h3 id="viewModalTitle" class="text-xl font-medium text-gray-900">รายละเอียดเอกสาร</h3>
-                <button id="closeViewModal" class="text-gray-400 hover:text-gray-500">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+    <!-- Navigation -->
+    <div class="nav glass">
+      <button class="nav-item active" data-section="registry">
+        <div class="nav-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5 4a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm-.5 2.5A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zM5 8a.5.5 0 0 0 0 1h6a.5.5 0 0 0 0-1H5zm0 2a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1H5z"/>
+            <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2zm10-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1z"/>
+          </svg>
+        </div>
+        <span class="nav-text">ทะเบียน</span>
+      </button>
+      <button class="nav-item" data-section="finance">
+        <div class="nav-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+            <path d="M0 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V4zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2H3z"/>
+          </svg>
+        </div>
+        <span class="nav-text">การเงิน</span>
+      </button>
+      <button class="nav-item" data-section="procurement">
+        <div class="nav-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5z"/>
+          </svg>
+        </div>
+        <span class="nav-text">พัสดุ</span>
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="search glass" id="searchContainer">
+      <div class="search-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+        </svg>
+      </div>
+      <input type="text" class="search-input" id="searchInput" placeholder="ค้นหาเอกสาร...">
+    </div>
+
+    <!-- Registry Section -->
+    <div id="registry-section" class="section active">
+      <!-- Tabs -->
+      <div class="tabs glass">
+        <button class="tab active" data-tab="registry-tab1">เลขที่รับ</button>
+        <button class="tab" data-tab="registry-tab2">เลขที่ส่ง</button>
+        <button class="tab" data-tab="registry-tab3">เลขที่คำสั่ง</button>
+      </div>
+
+      <!-- Tab Content -->
+      <div id="registry-tab1" class="tab-content active glass">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">เลขที่รับเอกสาร</h3>
+            <button class="add-btn" onclick="openAddModal('registry-received')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="registry-received-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+              
             </div>
-            <div class="px-6 py-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <p class="text-sm text-gray-500">ประเภทเอกสาร</p>
-                        <p id="viewDocType" class="font-medium"></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">เลขที่</p>
-                        <p id="viewDocNumber" class="font-medium"></p>
-                    </div>
-                    <div class="col-span-2">
-                        <p class="text-sm text-gray-500">เรื่อง</p>
-                        <p id="viewTitle" class="font-medium"></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">วันที่</p>
-                        <p id="viewDate" class="font-medium"></p>
-                    </div>
-                    <div>
-                        <p id="viewFromToLabel" class="text-sm text-gray-500">จาก/ถึง</p>
-                        <p id="viewFromTo" class="font-medium"></p>
-                    </div>
-                    <div class="col-span-2">
-                        <p class="text-sm text-gray-500">รายละเอียด</p>
-                        <p id="viewDescription" class="mt-1 whitespace-pre-line"></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">แผนก/ฝ่าย</p>
-                        <p id="viewDepartment" class="font-medium"></p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-500">ปีงบประมาณ</p>
-                        <p id="viewFiscalYear" class="font-medium"></p>
-                    </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('registry-received')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div id="registry-tab2" class="tab-content glass hidden">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">เลขที่ส่งเอกสาร</h3>
+            <button class="add-btn" onclick="openAddModal('registry-sent')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="registry-sent-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('registry-sent')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div id="registry-tab3" class="tab-content glass hidden">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">เลขที่คำสั่ง</h3>
+            <button class="add-btn" onclick="openAddModal('registry-orders')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="registry-orders-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('registry-orders')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Finance Section -->
+    <div id="finance-section" class="section">
+      <!-- Tabs -->
+      <div class="tabs glass">
+        <button class="tab active" data-tab="finance-tab1">บันทึกข้อความ</button>
+        <button class="tab" data-tab="finance-tab2">เลขที่</button>
+        <button class="tab" data-tab="finance-tab3">เบิกจ่าย</button>
+      </div>
+
+      <!-- Tab Content -->
+      <div id="finance-tab1" class="tab-content active glass">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">บันทึกข้อความการเงิน</h3>
+            <button class="add-btn" onclick="openAddModal('finance-memo')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="finance-memo-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('finance-memo')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div id="finance-tab2" class="tab-content glass hidden">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">เลขที่การเงิน</h3>
+            <button class="add-btn" onclick="openAddModal('finance-numbers')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="finance-numbers-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+              <div class="deletedatatab"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('finance-numbers')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div id="finance-tab3" class="tab-content glass hidden">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">รายการเบิกจ่าย</h3>
+            <button class="add-btn" onclick="openAddModal('finance-payments')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="finance-payments-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('finance-payments')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Procurement Section -->
+    <div id="procurement-section" class="section">
+      <!-- Tabs -->
+      <div class="tabs glass">
+        <button class="tab active" data-tab="procurement-tab1">บันทึกข้อความ</button>
+        <button class="tab" data-tab="procurement-tab2">จัดซื้อ</button>
+        <button class="tab" data-tab="procurement-tab3">จัดจ้าง</button>
+      </div>
+
+      <!-- Tab Content -->
+      <div id="procurement-tab1" class="tab-content active glass">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">บันทึกข้อความพัสดุ</h3>
+            <button class="add-btn" onclick="openAddModal('procurement-memo')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="procurement-memo-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('procurement-memo')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div id="procurement-tab2" class="tab-content glass hidden">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">รายการจัดซื้อ</h3>
+            <button class="add-btn" onclick="openAddModal('procurement-purchase')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="procurement-purchase-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('procurement-purchase')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div id="procurement-tab3" class="tab-content glass hidden">
+        <div class="content">
+          <div class="content-header">
+            <h3 class="content-title">รายการจัดจ้าง</h3>
+            <button class="add-btn" onclick="openAddModal('procurement-hire')">
+              <span class="add-icon">+</span>
+              เพิ่มรายการ
+            </button>
+          </div>
+          <div id="procurement-hire-content">
+            <!-- Data will be loaded here -->
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-header">
+                <div class="skeleton skeleton-number"></div>
+                <div class="skeleton skeleton-date"></div>
+              </div>
+              <div class="skeleton skeleton-subject"></div>
+            </div>
+          </div>
+          <button class="view-all" onclick="openViewAllModal('procurement-hire')">
+            ดูทั้งหมด
+            <span class="view-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab" id="quickAddBtn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Add Document Modal -->
+  <div id="addModal" class="modal">
+    <div class="modal-content glass">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modalTitle">เพิ่มเอกสารใหม่</h3>
+        <button class="close-btn" onclick="closeModal('addModal')">&times;</button>
+      </div>
+      <form id="addDocumentForm">
+        <input type="hidden" id="documentType" name="documentType">
+        <div class="form-group">
+          <label class="form-label" for="docNumber">เลขที่</label>
+          <input type="text" id="docNumber" name="docNumber" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="docDate">วันที่</label>
+          <input type="date" id="docDate" name="docDate" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="subjectLabel" for="docSubject">เรื่อง</label>
+          <input type="text" id="docSubject" name="docSubject" class="form-control" required>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-cancel" onclick="closeModal('addModal')">ยกเลิก</button>
+          <button type="submit" class="btn btn-submit" id="submitBtn">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<!-- View All Records Modal -->
+<div id="viewAllModal" class="modal">
+    <div class="modal-content glass">
+        <div class="modal-header">
+            <h3 class="modal-title" id="viewAllModalTitle">รายการทั้งหมด</h3>
+            <button class="close-btn" onclick="closeModal('viewAllModal')">&times;</button>
+        </div>
+        <div class="record-list" id="recordList">
+            <!-- Records will be loaded here -->
+            <div class="skeleton-card">
+                <div class="skeleton-header">
+                    <div class="skeleton skeleton-number"></div>
+                    <div class="skeleton skeleton-date"></div>
                 </div>
-                <div class="mt-6 flex justify-end">
-                    <button id="editFromViewBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg mr-2">
-                        แก้ไข
-                    </button>
-                    <button id="closeViewBtn" class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium py-2 px-4 rounded-lg">
-                        ปิด
-                    </button>
+                <div class="skeleton skeleton-subject"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-header">
+                    <div class="skeleton skeleton-number"></div>
+                    <div class="skeleton skeleton-date"></div>
                 </div>
+                <div class="skeleton skeleton-subject"></div>
             </div>
         </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 fade-in">
-            <div class="px-6 py-4">
-                <div class="flex items-center justify-center mb-4">
-                    <div class="bg-red-100 rounded-full p-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                </div>
-                <h3 class="text-lg font-medium text-center text-gray-900 mb-2">ยืนยันการลบ</h3>
-                <p class="text-center text-gray-500">คุณต้องการลบรายการนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้</p>
-            </div>
-            <div class="bg-gray-50 px-6 py-4 flex justify-center gap-4">
-                <button id="cancelDeleteBtn" class="bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium py-2 px-4 rounded-lg">
-                    ยกเลิก
-                </button>
-                <button id="confirmDeleteBtn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">
-                    ลบรายการ
-                </button>
-            </div>
+        <div class="pagination" id="pagination">
+            <!-- Pagination will be generated here -->
         </div>
     </div>
+</div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform transition-transform duration-300 translate-y-20 opacity-0 flex items-center">
-        <span id="toastIcon" class="mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-        </span>
-        <span id="toastMessage">บันทึกข้อมูลสำเร็จ</span>
+  <!-- Toast Messages -->
+  <div id="toast" class="toast"></div>
+
+  <script>
+
+    // ตั้งค่าให้เลือกฐานข้อมูลได้ ตัวเลือกที่ 1 เก็บในไฟล์ HTML (localStorage), ตัวเลือกที่ 2 Google Sheets
+let databaseOption = 1; // 1 for HTML file (localStorage), 2 for Google Sheets
+
+// ข้อมูลแผ่นงานสำหรับแต่ละประเภทเอกสาร
+const SHEET_MAPPINGS = {
+  'registry-received': 'ทะเบียนรับ',
+  'registry-sent': 'ทะเบียนส่ง',
+  'registry-orders': 'ทะเบียนคำสั่ง',
+  'finance-memo': 'บันทึกข้อความการเงิน',
+  'finance-numbers': 'เลขที่การเงิน',
+  'finance-payments': 'รายการเบิกจ่าย',
+  'procurement-memo': 'บันทึกข้อความพัสดุ',
+  'procurement-purchase': 'รายการจัดซื้อ',
+  'procurement-hire': 'รายการจัดจ้าง'
+};
+
+// ตัวแปรสำหรับเก็บข้อมูลการแบ่งหน้า
+let currentPage = 1;
+let totalPages = 1;
+let currentDataType = '';
+let allRecords = [];
+const recordsPerPage = 10;
+
+// ฟังก์ชันเริ่มต้นข้อมูลใน localStorage (สำหรับ databaseOption = 1)
+function initializeLocalStorage() {
+  if (!localStorage.getItem('documentData')) {
+    const initialData = {};
+    Object.keys(SHEET_MAPPINGS).forEach(key => {
+      initialData[key] = [];
+    });
+    localStorage.setItem('documentData', JSON.stringify(initialData));
+  }
+}
+
+// ฟังก์ชันดึงข้อมูลจาก localStorage
+function getLocalData(dataType, limit = 0) {
+  const data = JSON.parse(localStorage.getItem('documentData'))[dataType] || [];
+  return limit > 0 ? data.slice(0, limit) : data;
+}
+
+// ฟังก์ชันเพิ่มข้อมูลใน localStorage
+function addLocalData(dataType, data) {
+  const localData = JSON.parse(localStorage.getItem('documentData'));
+  localData[dataType].push(data);
+  localStorage.setItem('documentData', JSON.stringify(localData));
+}
+
+// ฟังก์ชันค้นหาข้อมูลใน localStorage
+function searchLocalData(dataType, query) {
+  const data = getLocalData(dataType);
+  return data.filter(row =>
+    row[0].toLowerCase().includes(query.toLowerCase()) ||
+    row[2].toLowerCase().includes(query.toLowerCase())
+  );
+}
+
+// ฟังก์ชันโหลดข้อมูล
+function loadData(dataType, limit = 5) {
+  const contentId = `${dataType}-content`;
+
+  // แสดงข้อความกำลังโหลด
+  document.getElementById(contentId).innerHTML = `
+    <div class="skeleton-card">
+      <div class="skeleton-header">
+        <div class="skeleton skeleton-number"></div>
+        <div class="skeleton skeleton-date"></div>
+      </div>
+      <div class="skeleton skeleton-subject"></div>
     </div>
+    <div class="skeleton-card">
+      <div class="skeleton-header">
+        <div class="skeleton skeleton-number"></div>
+        <div class="skeleton skeleton-date"></div>
+      </div>
+      <div class="skeleton skeleton-subject"></div>
+    </div>
+  `;
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize documents from localStorage or use sample data
-            let documents = JSON.parse(localStorage.getItem('adminDocuments')) || [
-                {
-                    id: 1,
-                    docType: 'incoming',
-                    docNumber: 'รับ 001/2566',
-                    title: 'หนังสือเชิญประชุมคณะกรรมการบริหาร',
-                    date: '2023-06-15',
-                    fromTo: 'สำนักงานปลัดกระทรวง',
-                    description: 'หนังสือเชิญประชุมคณะกรรมการบริหารประจำเดือนมิถุนายน 2566',
-                    department: 'ฝ่ายบริหาร',
-                    fiscalYear: '2023'
-                },
-                {
-                    id: 2,
-                    docType: 'outgoing',
-                    docNumber: 'นส 002/2566',
-                    title: 'หนังสือขอความอนุเคราะห์ใช้สถานที่',
-                    date: '2023-06-20',
-                    fromTo: 'โรงเรียนมัธยมศึกษา',
-                    description: 'หนังสือขอความอนุเคราะห์ใช้สถานที่จัดกิจกรรมวันเด็กแห่งชาติ',
-                    department: 'ฝ่ายกิจการนักเรียน',
-                    fiscalYear: '2023'
-                },
-                {
-                    id: 3,
-                    docType: 'order',
-                    docNumber: 'คส 003/2566',
-                    title: 'คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุ',
-                    date: '2023-06-25',
-                    fromTo: 'ผู้อำนวยการโรงเรียน',
-                    description: 'คำสั่งแต่งตั้งคณะกรรมการตรวจรับพัสดุโครงการปรับปรุงห้องประชุม',
-                    department: 'ฝ่ายพัสดุ',
-                    fiscalYear: '2023'
-                },
-                {
-                    id: 4,
-                    docType: 'incoming',
-                    docNumber: 'รับ 004/2566',
-                    title: 'หนังสือแจ้งกำหนดการอบรมครู',
-                    date: '2023-07-05',
-                    fromTo: 'สำนักงานเขตพื้นที่การศึกษา',
-                    description: 'หนังสือแจ้งกำหนดการอบรมครูเรื่องการจัดการเรียนการสอนออนไลน์',
-                    department: 'ฝ่ายบุคลากร',
-                    fiscalYear: '2023'
-                },
-                {
-                    id: 5,
-                    docType: 'order',
-                    docNumber: 'คส ',
-                    title: 'คำสั่งแต่งตั้งคณะกรรมการดำเนินงานวันไหว้ครู',
-                    date: '2023-07-10',
-                    fromTo: 'ผู้อำนวยการโรงเรียน',
-                    description: 'คำสั่งแต่งตั้งคณะกรรมการดำเนินงานวันไหว้ครูประจำปีการศึกษา 2566',
-                    department: 'ฝ่ายกิจการนักเรียน',
-                    fiscalYear: '2023'
-                }
-            ];
+  if (databaseOption === 1) {
+    // โหลดจาก localStorage
+    const data = getLocalData(dataType, limit);
+    if (!data || data.length === 0) {
+      document.getElementById(contentId).innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+          <div class="empty-text">ไม่พบข้อมูล</div>
+        </div>
+      `;
+      return;
+    }
 
-            // DOM Elements
-            const documentTableBody = document.getElementById('documentTableBody');
-            const emptyState = document.getElementById('emptyState');
-            const documentModal = document.getElementById('documentModal');
-            const viewDocumentModal = document.getElementById('viewDocumentModal');
-            const deleteModal = document.getElementById('deleteModal');
-            const documentForm = document.getElementById('documentForm');
-            const modalTitle = document.getElementById('modalTitle');
-            const addDocumentBtn = document.getElementById('addDocumentBtn');
-            const closeModal = document.getElementById('closeModal');
-            const cancelBtn = document.getElementById('cancelBtn');
-            const closeViewModal = document.getElementById('closeViewModal');
-            const closeViewBtn = document.getElementById('closeViewBtn');
-            const editFromViewBtn = document.getElementById('editFromViewBtn');
-            const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-            const searchInput = document.getElementById('searchInput');
-            const yearFilter = document.getElementById('yearFilter');
-            const sortBy = document.getElementById('sortBy');
-            const exportPdfBtn = document.getElementById('exportPdfBtn');
-            const exportExcelBtn = document.getElementById('exportExcelBtn');
-            const toast = document.getElementById('toast');
-            const docTypeSelect = document.getElementById('docType');
-            
-            // Export button elements
-            const pdfSpinner = document.getElementById('pdfSpinner');
-            const pdfIcon = document.getElementById('pdfIcon');
-            const excelSpinner = document.getElementById('excelSpinner');
-            const excelIcon = document.getElementById('excelIcon');
-            
-            // Tab elements
-            const tabAll = document.getElementById('tab-all');
-            const tabIncoming = document.getElementById('tab-incoming');
-            const tabOutgoing = document.getElementById('tab-outgoing');
-            const tabOrder = document.getElementById('tab-order');
-            
-            // Stats elements
-            const totalDocsEl = document.getElementById('totalDocs');
-            const incomingDocsEl = document.getElementById('incomingDocs');
-            const outgoingDocsEl = document.getElementById('outgoingDocs');
-            const orderDocsEl = document.getElementById('orderDocs');
+    // สร้าง HTML สำหรับแสดงข้อมูล
+    let cardsHTML = '';
+    data.forEach(row => {
+      cardsHTML += `
+        <div class="data-card">
+          <div class="data-card-header">
+            <div class="data-card-number">${row[0] || ''}</div>
+            <div class="data-card-date">${formatDate(row[1]) || ''}</div>
+          </div>
+          <div class="data-card-subject">${row[2] || ''}</div>
+        </div>
+      `;
+    });
 
-            let currentDocumentId = null;
-            let currentTab = 'all';
+    document.getElementById(contentId).innerHTML = cardsHTML;
+  } else {
+    // โหลดจาก Google Sheets
+    google.script.run
+      .withSuccessHandler(function(data) {
+        if (!data || data.length === 0) {
+          document.getElementById(contentId).innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">📄</div>
+              <div class="empty-text">ไม่พบข้อมูล</div>
+            </div>
+          `;
+          return;
+        }
 
-            // Initialize the table
-            renderDocuments();
-            updateStats();
-
-            // Event Listeners
-            addDocumentBtn.addEventListener('click', openAddDocumentModal);
-            closeModal.addEventListener('click', closeDocumentModal);
-            cancelBtn.addEventListener('click', closeDocumentModal);
-            documentForm.addEventListener('submit', saveDocument);
-            closeViewModal.addEventListener('click', closeViewDocumentModal);
-            closeViewBtn.addEventListener('click', closeViewDocumentModal);
-            editFromViewBtn.addEventListener('click', editFromView);
-            cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-            confirmDeleteBtn.addEventListener('click', confirmDelete);
-            searchInput.addEventListener('input', filterDocuments);
-            yearFilter.addEventListener('change', filterDocuments);
-            sortBy.addEventListener('change', filterDocuments);
-            exportPdfBtn.addEventListener('click', exportToPdf);
-            exportExcelBtn.addEventListener('click', exportToExcel);
-            
-            // Tab event listeners
-            tabAll.addEventListener('click', () => switchTab('all'));
-            tabIncoming.addEventListener('click', () => switchTab('incoming'));
-            tabOutgoing.addEventListener('click', () => switchTab('outgoing'));
-            tabOrder.addEventListener('click', () => switchTab('order'));
-            
-            // Document type change event
-            docTypeSelect.addEventListener('change', updateFromToLabel);
-
-            // Functions
-            function renderDocuments() {
-                const filteredDocuments = getFilteredDocuments();
-                
-                documentTableBody.innerHTML = '';
-                
-                if (filteredDocuments.length === 0) {
-                    emptyState.classList.remove('hidden');
-                    return;
-                }
-                
-                emptyState.classList.add('hidden');
-                
-                filteredDocuments.forEach((doc, index) => {
-                    const row = document.createElement('tr');
-                    
-                    // Document type class and text
-                    let typeClass = '';
-                    let typeText = '';
-                    switch(doc.docType) {
-                        case 'incoming':
-                            typeClass = 'bg-green-100 text-green-800';
-                            typeText = 'เลขที่รับ';
-                            break;
-                        case 'outgoing':
-                            typeClass = 'bg-yellow-100 text-yellow-800';
-                            typeText = 'เลขที่นำส่ง';
-                            break;
-                        case 'order':
-                            typeClass = 'bg-purple-100 text-purple-800';
-                            typeText = 'เลขที่คำสั่ง';
-                            break;
-                    }
-                    
-                    // Format date
-                    const dateObj = new Date(doc.date);
-                    const formattedDate = dateObj.toLocaleDateString('th-TH', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
-                    
-                    row.innerHTML = `
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${index + 1}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${typeClass}">
-                                ${typeText}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${doc.docNumber}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">${doc.title}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formattedDate}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${doc.fromTo || '-'}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div class="flex space-x-2">
-                                <button data-id="${doc.id}" class="view-btn text-blue-600 hover:text-blue-900">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                    </svg>
-                                </button>
-                                <button data-id="${doc.id}" class="edit-btn text-indigo-600 hover:text-indigo-900">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </button>
-                                <button data-id="${doc.id}" class="delete-btn text-red-600 hover:text-red-900">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                    
-                    documentTableBody.appendChild(row);
-                });
-                
-                // Add event listeners to buttons
-                document.querySelectorAll('.view-btn').forEach(btn => {
-                    btn.addEventListener('click', () => viewDocument(btn.dataset.id));
-                });
-                
-                document.querySelectorAll('.edit-btn').forEach(btn => {
-                    btn.addEventListener('click', () => editDocument(btn.dataset.id));
-                });
-                
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', () => openDeleteModal(btn.dataset.id));
-                });
-            }
-
-            function getFilteredDocuments() {
-                let filtered = [...documents];
-                const searchTerm = searchInput.value.toLowerCase();
-                const yearValue = yearFilter.value;
-                const sortValue = sortBy.value;
-                
-                // Apply tab filter
-                if (currentTab !== 'all') {
-                    filtered = filtered.filter(doc => doc.docType === currentTab);
-                }
-                
-                // Apply search filter
-                if (searchTerm) {
-                    filtered = filtered.filter(doc => 
-                        doc.title.toLowerCase().includes(searchTerm) || 
-                        doc.docNumber.toLowerCase().includes(searchTerm) ||
-                        (doc.description && doc.description.toLowerCase().includes(searchTerm)) ||
-                        (doc.fromTo && doc.fromTo.toLowerCase().includes(searchTerm))
-                    );
-                }
-                
-                // Apply year filter
-                if (yearValue !== 'all') {
-                    filtered = filtered.filter(doc => doc.fiscalYear === yearValue);
-                }
-                
-                // Apply sorting
-                switch(sortValue) {
-                    case 'newest':
-                        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-                        break;
-                    case 'oldest':
-                        filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
-                        break;
-                    case 'docNumber':
-                        filtered.sort((a, b) => a.docNumber.localeCompare(b.docNumber));
-                        break;
-                }
-                
-                return filtered;
-            }
-
-            function updateStats() {
-                const total = documents.length;
-                const incoming = documents.filter(doc => doc.docType === 'incoming').length;
-                const outgoing = documents.filter(doc => doc.docType === 'outgoing').length;
-                const order = documents.filter(doc => doc.docType === 'order').length;
-                
-                totalDocsEl.textContent = total;
-                incomingDocsEl.textContent = incoming;
-                outgoingDocsEl.textContent = outgoing;
-                orderDocsEl.textContent = order;
-            }
-
-            function switchTab(tab) {
-                currentTab = tab;
-                
-                // Update tab styling
-                [tabAll, tabIncoming, tabOutgoing, tabOrder].forEach(tabEl => {
-                    tabEl.classList.remove('tab-active');
-                    tabEl.classList.add('tab-inactive');
-                });
-                
-                switch(tab) {
-                    case 'all':
-                        tabAll.classList.remove('tab-inactive');
-                        tabAll.classList.add('tab-active');
-                        break;
-                    case 'incoming':
-                        tabIncoming.classList.remove('tab-inactive');
-                        tabIncoming.classList.add('tab-active');
-                        break;
-                    case 'outgoing':
-                        tabOutgoing.classList.remove('tab-inactive');
-                        tabOutgoing.classList.add('tab-active');
-                        break;
-                    case 'order':
-                        tabOrder.classList.remove('tab-inactive');
-                        tabOrder.classList.add('tab-active');
-                        break;
-                }
-                
-                renderDocuments();
-            }
-
-            function updateFromToLabel() {
-                const docType = docTypeSelect.value;
-                const fromToLabel = document.getElementById('fromToLabel');
-                
-                switch(docType) {
-                    case 'incoming':
-                        fromToLabel.textContent = 'จาก';
-                        break;
-                    case 'outgoing':
-                        fromToLabel.textContent = 'ถึง';
-                        break;
-                    case 'order':
-                        fromToLabel.textContent = 'ผู้ลงนาม';
-                        break;
-                    default:
-                        fromToLabel.textContent = 'จาก/ถึง';
-                }
-            }
-
-            function openAddDocumentModal() {
-                modalTitle.textContent = 'เพิ่มรายการใหม่';
-                documentForm.reset();
-                document.getElementById('documentId').value = '';
-                document.getElementById('date').valueAsDate = new Date();
-                document.getElementById('fiscalYear').value = new Date().getFullYear().toString();
-                
-                // Set default document type based on current tab
-                if (currentTab !== 'all') {
-                    docTypeSelect.value = currentTab;
-                    updateFromToLabel();
-                }
-                
-                documentModal.classList.remove('hidden');
-            }
-
-            function closeDocumentModal() {
-                documentModal.classList.add('hidden');
-            }
-
-            function closeViewDocumentModal() {
-                viewDocumentModal.classList.add('hidden');
-            }
-
-            function editFromView() {
-                closeViewDocumentModal();
-                editDocument(currentDocumentId);
-            }
-
-            function saveDocument(e) {
-                e.preventDefault();
-
-                const documentId = document.getElementById('documentId').value;
-                const docType = document.getElementById('docType').value;
-                const docNumber = document.getElementById('docNumber').value;
-                const title = document.getElementById('title').value.trim();
-                const date = document.getElementById('date').value;
-                const fromTo = document.getElementById('fromTo').value.trim();
-                const description = document.getElementById('description').value.trim();
-                const department = document.getElementById('department')?.value.trim() || '';
-                const fiscalYear = document.getElementById('fiscalYear').value.trim();
-
-                if (!docType || !docNumber || !title || !date || !fiscalYear) {
-                    showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
-                    return;
-                }
-
-                if (documentId) {
-                    // Edit existing document
-                    const index = documents.findIndex(doc => doc.id == documentId);
-                    if (index !== -1) {
-                        documents[index] = {
-                            ...documents[index],
-                            docType,
-                            docNumber,
-                            title,
-                            date,
-                            fromTo,
-                            description,
-                            department,
-                            fiscalYear
-                        };
-                        showToast('อัพเดทข้อมูลสำเร็จ');
-                    }
-                } else {
-                    // Add new document
-                    const newId = documents.length > 0 ? Math.max(...documents.map(doc => doc.id)) + 1 : 1;
-                    documents.push({
-                        id: newId,
-                        docType,
-                        docNumber,
-                        title,
-                        date,
-                        fromTo,
-                        description,
-                        department,
-                        fiscalYear
-                    });
-                    showToast('บันทึกข้อมูลสำเร็จ');
-                }
-
-                // Save to localStorage
-                localStorage.setItem('adminDocuments', JSON.stringify(documents));
-
-                // Update UI
-                renderDocuments();
-                updateStats();
-                closeDocumentModal();
-            }
-
-            function viewDocument(id) {
-                const doc = documents.find(doc => doc.id == id);
-                if (!doc) return;
-                
-                currentDocumentId = doc.id;
-                
-                // Set document type text
-                let docTypeText = '';
-                switch(doc.docType) {
-                    case 'incoming':
-                        docTypeText = 'เลขที่รับ';
-                        document.getElementById('viewFromToLabel').textContent = 'จาก';
-                        break;
-                    case 'outgoing':
-                        docTypeText = 'เลขที่นำส่ง';
-                        document.getElementById('viewFromToLabel').textContent = 'ถึง';
-                        break;
-                    case 'order':
-                        docTypeText = 'เลขที่คำสั่ง';
-                        document.getElementById('viewFromToLabel').textContent = 'ผู้ลงนาม';
-                        break;
-                }
-                
-                document.getElementById('viewDocType').textContent = docTypeText;
-                document.getElementById('viewDocNumber').textContent = doc.docNumber;
-                document.getElementById('viewTitle').textContent = doc.title;
-                
-                const dateObj = new Date(doc.date);
-                const formattedDate = dateObj.toLocaleDateString('th-TH', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                document.getElementById('viewDate').textContent = formattedDate;
-                
-                document.getElementById('viewFromTo').textContent = doc.fromTo || '-';
-                document.getElementById('viewDescription').textContent = doc.description || '-';
-                document.getElementById('viewDepartment').textContent = doc.department || '-';
-                
-                // Format fiscal year
-                const fiscalYearText = doc.fiscalYear === '2023' ? '2566 (2023)' : 
-                                      doc.fiscalYear === '2022' ? '2565 (2022)' : 
-                                      doc.fiscalYear === '2021' ? '2564 (2021)' : doc.fiscalYear;
-                document.getElementById('viewFiscalYear').textContent = fiscalYearText;
-                
-                viewDocumentModal.classList.remove('hidden');
-            }
-
-            function editDocument(id) {
-                const doc = documents.find(doc => doc.id == id);
-                if (!doc) return;
-                
-                modalTitle.textContent = 'แก้ไขรายการ';
-                
-                document.getElementById('documentId').value = doc.id;
-                document.getElementById('docType').value = doc.docType;
-                document.getElementById('docNumber').value = doc.docNumber;
-                document.getElementById('title').value = doc.title;
-                document.getElementById('date').value = doc.date;
-                document.getElementById('fromTo').value = doc.fromTo || '';
-                document.getElementById('description').value = doc.description || '';
-                document.getElementById('department').value = doc.department || '';
-                document.getElementById('fiscalYear').value = doc.fiscalYear;
-                
-                updateFromToLabel();
-                
-                documentModal.classList.remove('hidden');
-            }
-
-            function openDeleteModal(id) {
-                currentDocumentId = id;
-                deleteModal.classList.remove('hidden');
-            }
-
-            function closeDeleteModal() {
-                deleteModal.classList.add('hidden');
-            }
-
-            function confirmDelete() {
-                if (currentDocumentId) {
-                    documents = documents.filter(doc => doc.id != currentDocumentId);
-                    localStorage.setItem('adminDocuments', JSON.stringify(documents));
-                    renderDocuments();
-                    updateStats();
-                    showToast('ลบข้อมูลสำเร็จ', 'error');
-                }
-                closeDeleteModal();
-            }
-
-            function filterDocuments() {
-                renderDocuments();
-            }
-
-            function showToast(message, type = 'success') {
-                const toastMessage = document.getElementById('toastMessage');
-                const toastIcon = document.getElementById('toastIcon');
-                
-                toastMessage.textContent = message;
-                
-                if (type === 'success') {
-                    toastIcon.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                    `;
-                } else if (type === 'error') {
-                    toastIcon.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                        </svg>
-                    `;
-                }
-                
-                toast.classList.remove('translate-y-20', 'opacity-0');
-                
-                setTimeout(() => {
-                    toast.classList.add('translate-y-20', 'opacity-0');
-                }, 3000);
-            }
-
-            // Export to PDF function with loading indicator
-            async function exportToPdf() {
-                try {
-                    // Show loading spinner
-                    pdfSpinner.classList.remove('hidden');
-                    pdfIcon.classList.add('hidden');
-                    exportPdfBtn.disabled = true;
-                    
-                    // Get filtered documents
-                    const filteredDocuments = getFilteredDocuments();
-                    
-                    // Create a new jsPDF instance
-                    const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF({
-                        orientation: 'landscape',
-                        unit: 'mm',
-                        format: 'a4'
-                    });
-                    
-                    // Add title
-                    doc.setFont('Sarabun-Bold', 'normal');
-                    doc.setFontSize(18);
-                    
-                    let reportTitle = 'รายงานทะเบียนงานธุรการ';
-                    switch(currentTab) {
-                        case 'incoming':
-                            reportTitle = 'รายงานทะเบียนเลขที่รับ';
-                            break;
-                        case 'outgoing':
-                            reportTitle = 'รายงานทะเบียนเลขที่นำส่ง';
-                            break;
-                        case 'order':
-                            reportTitle = 'รายงานทะเบียนเลขที่คำสั่ง';
-                            break;
-                    }
-                    
-                    doc.text(reportTitle, 150, 15, { align: 'center' });
-                    
-                    // Add date
-                    const today = new Date();
-                    const formattedDate = today.toLocaleDateString('th-TH', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
-                    doc.setFontSize(12);
-                    doc.text(`วันที่พิมพ์: ${formattedDate}`, 270, 15, { align: 'right' });
-                    
-                    // Prepare table data
-                    const tableData = filteredDocuments.map((doc, index) => {
-                        const dateObj = new Date(doc.date);
-                        const formattedDate = dateObj.toLocaleDateString('th-TH', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                        });
-                        
-                        let docTypeText = '';
-                        switch(doc.docType) {
-                            case 'incoming':
-                                docTypeText = 'เลขที่รับ';
-                                break;
-                            case 'outgoing':
-                                docTypeText = 'เลขที่นำส่ง';
-                                break;
-                            case 'order':
-                                docTypeText = 'เลขที่คำสั่ง';
-                                break;
-                        }
-                        
-                        return [
-                            index + 1,
-                            docTypeText,
-                            doc.docNumber,
-                            doc.title,
-                            formattedDate,
-                            doc.fromTo || '-',
-                            doc.department || '-'
-                        ];
-                    });
-                    
-                    // Generate table
-                    doc.autoTable({
-                        head: [['ลำดับ', 'ประเภท', 'เลขที่', 'เรื่อง', 'วันที่', 'จาก/ถึง', 'แผนก/ฝ่าย']],
-                        body: tableData,
-                        startY: 25,
-                        headStyles: {
-                            fillColor: [41, 82, 163],
-                            textColor: [255, 255, 255],
-                            fontStyle: 'bold'
-                        },
-                        alternateRowStyles: {
-                            fillColor: [240, 245, 255]
-                        },
-                        styles: {
-                            font: 'Sarabun',
-                            fontSize: 10
-                        },
-                        columnStyles: {
-                            0: { cellWidth: 15 },
-                            1: { cellWidth: 25 },
-                            2: { cellWidth: 30 },
-                            3: { cellWidth: 80 },
-                            4: { cellWidth: 30 },
-                            5: { cellWidth: 40 },
-                            6: { cellWidth: 40 }
-                        }
-                    });
-                    
-                    // Add summary
-                    const finalY = doc.lastAutoTable.finalY + 10;
-                    doc.text(`จำนวนรายการทั้งหมด: ${filteredDocuments.length} รายการ`, 14, finalY);
-                    
-                    // Save PDF
-                    const fileName = currentTab === 'all' ? 'รายงานทะเบียนงานธุรการ.pdf' : 
-                                    currentTab === 'incoming' ? 'รายงานทะเบียนเลขที่รับ.pdf' :
-                                    currentTab === 'outgoing' ? 'รายงานทะเบียนเลขที่นำส่ง.pdf' :
-                                    'รายงานทะเบียนเลขที่คำสั่ง.pdf';
-                    
-                    // Simulate a small delay to show the loading spinner
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    // Save and download the PDF
-                    doc.save(fileName);
-                    
-                    showToast('ดาวน์โหลด PDF สำเร็จ');
-                } catch (error) {
-                    console.error('Error generating PDF:', error);
-                    showToast('เกิดข้อผิดพลาดในการสร้างไฟล์ PDF', 'error');
-                } finally {
-                    // Hide loading spinner
-                    pdfSpinner.classList.add('hidden');
-                    pdfIcon.classList.remove('hidden');
-                    exportPdfBtn.disabled = false;
-                }
-            }
-
-            // Export to Excel function with loading indicator
-            async function exportToExcel() {
-                try {
-                    // Show loading spinner
-                    excelSpinner.classList.remove('hidden');
-                    excelIcon.classList.add('hidden');
-                    exportExcelBtn.disabled = true;
-                    
-                    // Get filtered documents
-                    const filteredDocuments = getFilteredDocuments();
-                    
-                    // Prepare Excel data
-                    const excelData = filteredDocuments.map(doc => {
-                        const dateObj = new Date(doc.date);
-                        const formattedDate = dateObj.toLocaleDateString('th-TH', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                        });
-                        
-                        let docTypeText = '';
-                        switch(doc.docType) {
-                            case 'incoming':
-                                docTypeText = 'เลขที่รับ';
-                                break;
-                            case 'outgoing':
-                                docTypeText = 'เลขที่นำส่ง';
-                                break;
-                            case 'order':
-                                docTypeText = 'เลขที่คำสั่ง';
-                                break;
-                        }
-                        
-                        return {
-                            'ลำดับ': filteredDocuments.indexOf(doc) + 1,
-                            'ประเภท': docTypeText,
-                            'เลขที่': doc.docNumber,
-                            'เรื่อง': doc.title,
-                            'วันที่': formattedDate,
-                            'จาก/ถึง': doc.fromTo || '-',
-                            'รายละเอียด': doc.description || '-',
-                            'แผนก/ฝ่าย': doc.department || '-',
-                            'ปีงบประมาณ': doc.fiscalYear === '2023' ? '2566' : 
-                                        doc.fiscalYear === '2022' ? '2565' : 
-                                        doc.fiscalYear === '2021' ? '2564' : doc.fiscalYear
-                        };
-                    });
-                    
-                    // Create worksheet
-                    const ws = XLSX.utils.json_to_sheet(excelData);
-                    
-                    // Set column widths
-                    const wscols = [
-                        { wch: 8 },  // ลำดับ
-                        { wch: 15 }, // ประเภท
-                        { wch: 15 }, // เลขที่
-                        { wch: 40 }, // เรื่อง
-                        { wch: 20 }, // วันที่
-                        { wch: 25 }, // จาก/ถึง
-                        { wch: 50 }, // รายละเอียด
-                        { wch: 20 }, // แผนก/ฝ่าย
-                        { wch: 15 }  // ปีงบประมาณ
-                    ];
-                    ws['!cols'] = wscols;
-                    
-                    // Create workbook
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, 'ทะเบียนงานธุรการ');
-                    
-                    // Determine file name based on current tab
-                    const fileName = currentTab === 'all' ? 'รายงานทะเบียนงานธุรการ.xlsx' : 
-                                    currentTab === 'incoming' ? 'รายงานทะเบียนเลขที่รับ.xlsx' :
-                                    currentTab === 'outgoing' ? 'รายงานทะเบียนเลขที่นำส่ง.xlsx' :
-                                    'รายงานทะเบียนเลขที่คำสั่ง.xlsx';
-                    
-                    // Simulate a small delay to show the loading spinner
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    // Generate and download Excel file
-                    XLSX.writeFile(wb, fileName);
-                    
-                    showToast('ดาวน์โหลด Excel สำเร็จ');
-                } catch (error) {
-                    console.error('Error generating Excel:', error);
-                    showToast('เกิดข้อผิดพลาดในการสร้างไฟล์ Excel', 'error');
-                } finally {
-                    // Hide loading spinner
-                    excelSpinner.classList.add('hidden');
-                    excelIcon.classList.remove('hidden');
-                    exportExcelBtn.disabled = false;
-                }
-            }
+        let cardsHTML = '';
+        data.forEach(row => {
+          cardsHTML += `
+            <div class="data-card">
+              <div class="data-card-header">
+                <div class="data-card-number">${row[0] || ''}</div>
+                <div class="data-card-date">${formatDate(row[1]) || ''}</div>
+              </div>
+              <div class="data-card-subject">${row[2] || ''}</div>
+            </div>
+          `;
         });
-        
-        
-    </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'935af54bc2f47b40',t:'MTc0NTU1Mzg4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+        document.getElementById(contentId).innerHTML = cardsHTML;
+      })
+      .withFailureHandler(function(error) {
+        console.error('Error loading data:', error);
+        document.getElementById(contentId).innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❌</div>
+            <div class="empty-text">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>
+          </div>
+        `;
+      })
+      .getSheetData(SHEET_MAPPINGS[dataType], limit);
+  }
+}
+
+// ฟังก์ชันโหลดข้อมูลทั้งหมดสำหรับการแสดงในโมดัล
+function loadAllData(dataType) {
+  if (databaseOption === 1) {
+    allRecords = getLocalData(dataType);
+    totalPages = Math.ceil(allRecords.length / recordsPerPage);
+    displayRecordsPage(1);
+    generatePagination();
+  } else {
+    google.script.run
+      .withSuccessHandler(function(data) {
+        allRecords = data || [];
+        totalPages = Math.ceil(allRecords.length / recordsPerPage);
+        displayRecordsPage(1);
+        generatePagination();
+      })
+      .withFailureHandler(function(error) {
+        console.error('Error loading all data:', error);
+        document.getElementById('recordList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❌</div>
+            <div class="empty-text">เกิดข้อผิดพลาดในการโหลดข้อมูล</div>
+          </div>
+        `;
+      })
+      .getSheetData(SHEET_MAPPINGS[dataType], 0);
+  }
+}
+
+// ฟังก์ชันแสดงข้อมูลตามหน้าที่เลือก
+function displayRecordsPage(page) {
+  currentPage = page;
+
+  const start = (page - 1) * recordsPerPage;
+  const end = start + recordsPerPage;
+  const pageRecords = allRecords.slice(start, end);
+
+  if (pageRecords.length === 0) {
+    document.getElementById('recordList').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📄</div>
+        <div class="empty-text">ไม่พบข้อมูล</div>
+      </div>
+    `;
+    return;
+  }
+
+  let recordsHTML = '';
+  pageRecords.forEach(row => {
+    recordsHTML += `
+      <div class="record-item">
+        <div class="record-item-header">
+          <div class="record-number">${row[0] || ''}</div>
+          <div class="record-date">${formatDate(row[1]) || ''}</div>
+        </div>
+        <div class="record-subject">${row[2] || ''}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById('recordList').innerHTML = recordsHTML;
+}
+
+// ฟังก์ชันสร้างปุ่มแบ่งหน้า
+function generatePagination() {
+  const pagination = document.getElementById('pagination');
+  pagination.innerHTML = '';
+
+  if (totalPages <= 1) return;
+
+  if (currentPage > 1) {
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.innerHTML = '«';
+    prevBtn.onclick = function() {
+      displayRecordsPage(currentPage - 1);
+      generatePagination();
+    };
+    pagination.appendChild(prevBtn);
+  }
+
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, startPage + 4);
+
+  if (endPage - startPage < 4) {
+    startPage = Math.max(1, endPage - 4);
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    const pageBtn = document.createElement('button');
+    pageBtn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+    pageBtn.textContent = i;
+    pageBtn.onclick = function() {
+      displayRecordsPage(i);
+      generatePagination();
+    };
+    pagination.appendChild(pageBtn);
+  }
+
+  if (currentPage < totalPages) {
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.innerHTML = '»';
+    nextBtn.onclick = function() {
+      displayRecordsPage(currentPage + 1);
+      generatePagination();
+    };
+    pagination.appendChild(nextBtn);
+  }
+}
+
+// ฟังก์ชันจัดรูปแบบวันที่
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+
+  let date;
+  if (dateStr instanceof Date) {
+    date = dateStr;
+  } else if (typeof dateStr === 'string') {
+    if (dateStr.includes('-')) {
+      date = new Date(dateStr);
+    } else {
+      return dateStr;
+    }
+  } else {
+    return dateStr.toString();
+  }
+
+  if (isNaN(date.getTime())) {
+    return dateStr;
+  }
+
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
+// ฟังก์ชันเพิ่มข้อมูลใหม่
+function addData(dataType, data) {
+  const submitBtn = document.getElementById('submitBtn');
+  const originalBtnText = submitBtn.innerHTML;
+  submitBtn.innerHTML = `<div class="loading"></div> กำลังบันทึก...`;
+  submitBtn.disabled = true;
+
+  if (databaseOption === 1) {
+    addLocalData(dataType, [data.docNumber, data.docDate, data.docSubject]);
+    submitBtn.innerHTML = originalBtnText;
+    submitBtn.disabled = false;
+    closeModal('addModal');
+    loadData(dataType);
+    showToast('บันทึกข้อมูลสำเร็จ', 'success');
+  } else {
+    google.script.run
+      .withSuccessHandler(function(result) {
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+        closeModal('addModal');
+        loadData(dataType);
+        showToast('บันทึกข้อมูลสำเร็จ', 'success');
+      })
+      .withFailureHandler(function(error) {
+        console.error('Error adding data:', error);
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+        showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+      })
+      .addSheetData(SHEET_MAPPINGS[dataType], [data.docNumber, data.docDate, data.docSubject]);
+  }
+}
+
+// ฟังก์ชันค้นหาข้อมูล
+function searchData(query) {
+  const activeSection = document.querySelector('.section.active').id.replace('-section', '');
+  const activeTab = document.querySelector(`#${activeSection}-section .tab.active`).getAttribute('data-tab');
+  const dataType = getDataTypeFromTabId(activeTab);
+
+  if (!dataType) return;
+
+  const contentId = `${dataType}-content`;
+
+  document.getElementById(contentId).innerHTML = `
+    <div class="skeleton-card">
+      <div class="skeleton-header">
+        <div class="skeleton skeleton-number"></div>
+        <div class="skeleton skeleton-date"></div>
+      </div>
+      <div class="skeleton skeleton-subject"></div>
+    </div>
+  `;
+
+  if (databaseOption === 1) {
+    const data = searchLocalData(dataType, query);
+    if (!data || data.length === 0) {
+      document.getElementById(contentId).innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-text">ไม่พบข้อมูลที่ตรงกับ "${query}"</div>
+        </div>
+      `;
+      return;
+    }
+
+    let cardsHTML = '';
+    data.forEach(row => {
+      cardsHTML += `
+        <div class="data-card">
+          <div class="data-card-header">
+            <div class="data-card-number">${row[0] || ''}</div>
+            <div class="data-card-date">${formatDate(row[1]) || ''}</div>
+          </div>
+          <div class="data-card-subject">${row[2] || ''}</div>
+        </div>
+      `;
+    });
+
+    document.getElementById(contentId).innerHTML = cardsHTML;
+  } else {
+    google.script.run
+      .withSuccessHandler(function(data) {
+        if (!data || data.length === 0) {
+          document.getElementById(contentId).innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <div class="empty-text">ไม่พบข้อมูลที่ตรงกับ "${query}"</div>
+            </div>
+          `;
+          return;
+        }
+
+        let cardsHTML = '';
+        data.forEach(row => {
+          cardsHTML += `
+            <div class="data-card">
+              <div class="data-card-header">
+                <div class="data-card-number">${row[0] || ''}</div>
+                <div class="data-card-date">${formatDate(row[1]) || ''}</div>
+              </div>
+              <div class="data-card-subject">${row[2] || ''}</div>
+            </div>
+          `;
+        });
+
+        document.getElementById(contentId).innerHTML = cardsHTML;
+      })
+      .withFailureHandler(function(error) {
+        console.error('Error searching data:', error);
+        document.getElementById(contentId).innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❌</div>
+            <div class="empty-text">เกิดข้อผิดพลาดในการค้นหาข้อมูล</div>
+          </div>
+        `;
+      })
+      .searchSheetData(SHEET_MAPPINGS[dataType], query);
+  }
+}
+
+// ฟังก์ชันแสดงข้อความแจ้งเตือน
+function showToast(message, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = `toast toast-${type}`;
+  toast.classList.add('show');
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+// ฟังก์ชันเปิด Modal เพิ่มเอกสาร
+function openAddModal(dataType) {
+  document.getElementById('documentType').value = dataType;
+
+  let modalTitle = 'เพิ่มเอกสารใหม่';
+  let subjectLabel = 'เรื่อง';
+
+  switch(dataType) {
+    case 'registry-received':
+      modalTitle = 'เพิ่มเลขที่รับเอกสาร';
+      break;
+    case 'registry-sent':
+      modalTitle = 'เพิ่มเลขที่ส่งเอกสาร';
+      break;
+    case 'registry-orders':
+      modalTitle = 'เพิ่มเลขที่คำสั่ง';
+      break;
+    case 'finance-memo':
+      modalTitle = 'เพิ่มบันทึกข้อความการเงิน';
+      break;
+    case 'finance-numbers':
+      modalTitle = 'เพิ่มเลขที่การเงิน';
+      subjectLabel = 'รายการ';
+      break;
+    case 'finance-payments':
+      modalTitle = 'เพิ่มรายการเบิกจ่าย';
+      subjectLabel = 'จำนวนเงิน';
+      break;
+    case 'procurement-memo':
+      modalTitle = 'เพิ่มบันทึกข้อความพัสดุ';
+      break;
+    case 'procurement-purchase':
+      modalTitle = 'เพิ่มรายการจัดซื้อ';
+      subjectLabel = 'รายการ';
+      break;
+    case 'procurement-hire':
+      modalTitle = 'เพิ่มรายการจัดจ้าง';
+      subjectLabel = 'รายการ';
+      break;
+  }
+
+  document.getElementById('modalTitle').textContent = modalTitle;
+  document.getElementById('subjectLabel').textContent = subjectLabel;
+
+  document.getElementById('docNumber').value = '';
+  document.getElementById('docDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('docSubject').value = '';
+
+  document.getElementById('addModal').style.display = 'flex';
+}
+
+// ฟังก์ชันเปิด Modal แสดงรายการทั้งหมด
+function openViewAllModal(dataType) {
+  currentDataType = dataType;
+
+  let modalTitle = 'รายการทั้งหมด';
+
+  switch(dataType) {
+    case 'registry-received':
+      modalTitle = 'รายการเลขที่รับเอกสารทั้งหมด';
+      break;
+    case 'registry-sent':
+      modalTitle = 'รายการเลขที่ส่งเอกสารทั้งหมด';
+      break;
+    case 'registry-orders':
+      modalTitle = 'รายการเลขที่คำสั่งทั้งหมด';
+      break;
+    case 'finance-memo':
+      modalTitle = 'รายการบันทึกข้อความการเงินทั้งหมด';
+      break;
+    case 'finance-numbers':
+      modalTitle = 'รายการเลขที่การเงินทั้งหมด';
+      break;
+    case 'finance-payments':
+      modalTitle = 'รายการเบิกจ่ายทั้งหมด';
+      break;
+    case 'procurement-memo':
+      modalTitle = 'รายการบันทึกข้อความพัสดุทั้งหมด';
+      break;
+    case 'procurement-purchase':
+      modalTitle = 'รายการจัดซื้อทั้งหมด';
+      break;
+    case 'procurement-hire':
+      modalTitle = 'รายการจัดจ้างทั้งหมด';
+      break;
+  }
+
+  document.getElementById('viewAllModalTitle').textContent = modalTitle;
+
+  document.getElementById('recordList').innerHTML = `
+    <div class="skeleton-card">
+      <div class="skeleton-header">
+        <div class="skeleton skeleton-number"></div>
+        <div class="skeleton skeleton-date"></div>
+      </div>
+      <div class="skeleton skeleton-subject"></div>
+    </div>
+    <div class="skeleton-card">
+      <div class="skeleton-header">
+        <div class="skeleton skeleton-number"></div>
+        <div class="skeleton skeleton-date"></div>
+      </div>
+      <div class="skeleton skeleton-subject"></div>
+    </div>
+  `;
+
+  document.getElementById('viewAllModal').style.display = 'flex';
+
+  loadAllData(dataType);
+}
+
+// ฟังก์ชันปิด Modal
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+}
+
+// ฟังก์ชันสำหรับแปลง tab ID เป็นประเภทข้อมูล
+function getDataTypeFromTabId(tabId) {
+  const mapping = {
+    'registry-tab1': 'registry-received',
+    'registry-tab2': 'registry-sent',
+    'registry-tab3': 'registry-orders',
+    'finance-tab1': 'finance-memo',
+    'finance-tab2': 'finance-numbers',
+    'finance-tab3': 'finance-payments',
+    'procurement-tab1': 'procurement-memo',
+    'procurement-tab2': 'procurement-purchase',
+    'procurement-tab3': 'procurement-hire'
+  };
+
+  return mapping[tabId];
+}
+
+// Section Navigation
+const navItems = document.querySelectorAll('.nav-item');
+const sections = document.querySelectorAll('.section');
+
+navItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const sectionId = item.getAttribute('data-section');
+
+    navItems.forEach(btn => btn.classList.remove('active'));
+    item.classList.add('active');
+
+    sections.forEach(section => section.classList.remove('active'));
+    document.getElementById(`${sectionId}-section`).classList.add('active');
+
+    const activeTab = document.querySelector(`#${sectionId}-section .tab.active`).getAttribute('data-tab');
+    const dataType = getDataTypeFromTabId(activeTab);
+    if (dataType) loadData(dataType);
+  });
+});
+
+// Tab Navigation
+const tabs = document.querySelectorAll('.tab');
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tabId = tab.getAttribute('data-tab');
+    const parentSection = tab.closest('.section');
+
+    parentSection.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+
+    parentSection.querySelectorAll('.tab-content').forEach(content => {
+      content.classList.add('hidden');
+      content.classList.remove('active');
+    });
+    const tabContent = document.getElementById(tabId);
+    tabContent.classList.remove('hidden');
+    tabContent.classList.add('active');
+
+    const dataType = getDataTypeFromTabId(tabId);
+    if (dataType) loadData(dataType);
+  });
+});
+
+// Search functionality
+const searchInput = document.getElementById('searchInput');
+const searchContainer = document.getElementById('searchContainer');
+
+searchInput.addEventListener('focus', () => {
+  searchContainer.classList.add('active');
+});
+
+searchInput.addEventListener('blur', () => {
+  searchContainer.classList.remove('active');
+});
+
+searchInput.addEventListener('keyup', (e) => {
+  if (e.key === 'Enter' && searchInput.value.trim() !== '') {
+    searchData(searchInput.value.trim());
+  }
+});
+
+// Notification button
+document.getElementById('notificationBtn').addEventListener('click', () => {
+  showToast('คุณมี 3 การแจ้งเตือนใหม่', 'success');
+});
+
+// Floating Action Button
+document.getElementById('quickAddBtn').addEventListener('click', () => {
+  const activeSection = document.querySelector('.section.active').id.replace('-section', '');
+  const activeTab = document.querySelector(`#${activeSection}-section .tab.active`).getAttribute('data-tab');
+  const dataType = getDataTypeFromTabId(activeTab);
+
+  if (dataType) {
+    openAddModal(dataType);
+  } else {
+    showToast('กรุณาเลือกประเภทเอกสารที่ต้องการเพิ่ม', 'error');
+  }
+});
+
+// Form submission
+document.getElementById('addDocumentForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+
+  const dataType = document.getElementById('documentType').value;
+  const docNumber = document.getElementById('docNumber').value;
+  const docDate = document.getElementById('docDate').value;
+  const docSubject = document.getElementById('docSubject').value;
+
+  addData(dataType, { docNumber, docDate, docSubject });
+});
+
+// โหลดข้อมูลเริ่มต้นเมื่อโหลดหน้าเว็บ
+document.addEventListener('DOMContentLoaded', function() {
+  if (databaseOption === 1) {
+    initializeLocalStorage();
+  }
+  loadData('registry-received');
+});
+
+function createSkeletonCard() {
+  const card = document.createElement('div');
+  card.className = 'skeleton-card';
+  card.innerHTML = `
+    <div class="skeleton-header">
+      <div class="skeleton skeleton-number"></div>
+      <div class="skeleton skeleton-date"></div>
+    </div>
+    <div class="skeleton skeleton-subject"></div>
+  `;
+  return card;
+}
+
+function updateCards(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const containerWidth = container.clientWidth;
+  const cardMinWidth = 250;
+  const gap = 16;
+  const maxCardsPerRow = Math.floor((containerWidth + gap) / (cardMinWidth + gap));
+  const cardCount = Math.min(maxCardsPerRow, 6); // จำกัดสูงสุด 6 cards
+
+  container.innerHTML = '';
+  for (let i = 0; i < cardCount; i++) {
+    container.appendChild(createSkeletonCard());
+  }
+}
+
+function updateAllTabs() {
+  updateCards('recordList-received');
+  updateCards('recordList-sent');
+  updateCards('recordList-orders');
+}
+
+// เรียกใช้งานเมื่อโหลดและเมื่อขนาดหน้าจอเปลี่ยน
+window.addEventListener('load', updateAllTabs);
+window.addEventListener('resize', updateAllTabs);
+
+// อัปเดตเมื่อ tab เปลี่ยน (ถ้ามีการสลับ tab)
+document.querySelectorAll('.tab-content').forEach(tab => {
+  tab.addEventListener('transitionend', () => {
+    if (tab.classList.contains('active')) {
+      const containerId = tab.querySelector('.record-list').id;
+      updateCards(containerId);
+    }
+  });
+});
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9375e6af43827b38',t:'MTc0NTgzNjQwMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
